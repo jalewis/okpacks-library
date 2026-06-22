@@ -1,0 +1,20 @@
+{
+  "bundle": {
+    "id": "bundle--23d0de45-fe98-5b76-8e93-0497d2dc5166",
+    "objects": [
+      {
+        "created": "2026-06-16T00:00:00.000Z",
+        "id": "x-okfsec-dashboard--d15caaf8-90d2-5738-ab73-afafa4f24ade",
+        "labels": [
+          "dashboard"
+        ],
+        "modified": "2026-06-16T00:00:00.000Z",
+        "name": "Ransomware watch",
+        "spec_version": "2.1",
+        "type": "x-okfsec-dashboard"
+      }
+    ],
+    "type": "bundle"
+  },
+  "loss": []
+}

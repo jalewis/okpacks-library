@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "catalog": "okpacks-library",
+  "packs": [
+    {
+      "name": "okpack-example",
+      "domain": "generic starter (the skeleton shape)",
+      "repo": "jalewis/okpacks-library",
+      "subdir": "packs/okpack-example",
+      "ref": "main",
+      "engine_version": "v0.2.0",
+      "validated_against": "v0.2.0",
+      "trust": "public",
+      "status": "example"
+    },
+    {
+      "name": "okpack-ai-research",
+      "domain": "AI / LLM research watch — models, labs, techniques, benchmarks, predictions",
+      "repo": "jalewis/okpacks-library",
+      "subdir": "packs/okpack-ai-research",
+      "ref": "main",
+      "engine_version": "v0.2.0",
+      "validated_against": "v0.2.0",
+      "trust": "public",
+      "status": "community"
+    },
+    {
+      "name": "okpack-sec",
+      "domain": "security / threat-intel (STIX-aligned)",
+      "repo": "jalewis/okpacks-library",
+      "subdir": "packs/okpack-sec",
+      "ref": "main",
+      "engine_version": "v0.2.0",
+      "validated_against": "v0.2.0",
+      "trust": "public",
+      "status": "flagship"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+# secrets + runtime — NEVER commit (a pack may be public)
+.env
+.hermes-data/
+config.yaml
+# raw/ holds runtime ingest INPUT/OUTPUT (scraped article bodies + reports you drop in) — content is
+# NEVER committed (third-party / not source-of-truth). Only the drop-zone structure (.gitkeep) and
+# raw/README.md are tracked, so the dirs exist on a fresh clone. See raw/README.md.
+raw/**
+!raw/**/
+!raw/README.md
+!raw/**/.gitkeep
+
+# tooling caches
+.serena/
+
+# python / editor / scratch
+__pycache__/
+*.pyc
+*.bak
+*.bak.*
+.DS_Store

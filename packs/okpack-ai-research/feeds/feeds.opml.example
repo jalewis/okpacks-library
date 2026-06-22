@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- okpack-ai-research SUGGESTED feed sources — public AI / LLM research RSS+Atom feeds.
+     DISABLED BY DEFAULT: a suggestion list, not active config. Copy the ones you
+     want into feeds/feeds.opml to opt in — see README §"Enabling data sources".
+     Shipping sources active would point every deployment at the same origins at
+     once (a thundering herd); opt in deliberately and jitter your schedule.
+     Consumed by the engine's generic feed_fetch.py -> raw/ -> the ingest cron
+     compiles into wiki/. Grouped by source TYPE. Re-probe with the validate.py
+     probe flag; validate.py enforces the count below.
+     All 16 probed live (HTTP 200 + valid feed): 2026-06-16, re-probed 2026-06-20. -->
+<opml version="2.0">
+  <head><title>AI / LLM Research Watch feeds</title></head>
+  <body>
+    <outline text="Preprints (arXiv)">
+      <outline text="arXiv cs.AI" type="rss" xmlUrl="https://export.arxiv.org/rss/cs.AI"/>
+      <outline text="arXiv cs.LG" type="rss" xmlUrl="https://export.arxiv.org/rss/cs.LG"/>
+      <outline text="arXiv cs.CL" type="rss" xmlUrl="https://export.arxiv.org/rss/cs.CL"/>
+    </outline>
+    <outline text="Industry labs">
+      <outline text="OpenAI News" type="rss" xmlUrl="https://openai.com/news/rss.xml"/>
+      <outline text="Google DeepMind" type="rss" xmlUrl="https://deepmind.google/blog/rss.xml"/>
+      <outline text="Google Research" type="rss" xmlUrl="https://research.google/blog/rss/"/>
+      <outline text="Hugging Face" type="rss" xmlUrl="https://huggingface.co/blog/feed.xml"/>
+      <outline text="Microsoft Research" type="rss" xmlUrl="https://www.microsoft.com/en-us/research/feed/"/>
+      <outline text="Apple Machine Learning" type="rss" xmlUrl="https://machinelearning.apple.com/rss.xml"/>
+      <outline text="NVIDIA Deep Learning" type="rss" xmlUrl="https://blogs.nvidia.com/blog/category/deep-learning/feed/"/>
+    </outline>
+    <outline text="Academic labs">
+      <outline text="Berkeley AI Research (BAIR)" type="rss" xmlUrl="https://bair.berkeley.edu/blog/feed.xml"/>
+      <outline text="Stanford AI Lab (SAIL)" type="rss" xmlUrl="https://ai.stanford.edu/blog/feed.xml"/>
+      <outline text="MIT News — Artificial Intelligence" type="rss" xmlUrl="https://news.mit.edu/rss/topic/artificial-intelligence2"/>
+    </outline>
+    <outline text="Commentary / analysis">
+      <outline text="The Gradient" type="rss" xmlUrl="https://thegradient.pub/rss/"/>
+      <outline text="Import AI" type="rss" xmlUrl="https://importai.substack.com/feed"/>
+      <outline text="Ahead of AI (Sebastian Raschka)" type="rss" xmlUrl="https://magazine.sebastianraschka.com/feed"/>
+    </outline>
+  </body>
+</opml>

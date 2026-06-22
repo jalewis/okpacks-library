@@ -1,0 +1,35 @@
+{
+  "bundle": {
+    "id": "bundle--726b6523-8b71-574a-ab09-43ff0a33eb59",
+    "objects": [
+      {
+        "created": "2026-06-16T00:00:00.000Z",
+        "id": "x-okfsec-software--1c8ac2a8-4fdf-5a13-8e38-5c4922ebfc2c",
+        "labels": [
+          "it-management"
+        ],
+        "modified": "2026-06-16T00:00:00.000Z",
+        "name": "SolarWinds Orion",
+        "spec_version": "2.1",
+        "type": "x-okfsec-software",
+        "x_okfsec_cpe": "cpe:2.3:a:solarwinds:orion:*:*:*:*:*:*:*:*",
+        "x_okfsec_vendor": "SolarWinds"
+      },
+      {
+        "created": "2026-06-16T00:00:00.000Z",
+        "id": "relationship--dfa41905-2dec-5301-a6b5-8c95f0f50a23",
+        "modified": "2026-06-16T00:00:00.000Z",
+        "relationship_type": "x_okfsec_affects",
+        "source_ref": "vulnerability--6cf33d60-982a-58da-b140-86da124bc067",
+        "spec_version": "2.1",
+        "target_ref": "x-okfsec-software--1c8ac2a8-4fdf-5a13-8e38-5c4922ebfc2c",
+        "type": "relationship"
+      }
+    ],
+    "type": "bundle"
+  },
+  "loss": [
+    "cpe",
+    "vendor"
+  ]
+}

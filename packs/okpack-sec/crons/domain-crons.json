@@ -1,0 +1,144 @@
+[
+  {
+    "id": "7c0ff9a23fcf",
+    "name": "okpack-sec-feed-fetch",
+    "enabled": true,
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:2h"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "okpack-sec feed pull: fetch the security OPML into raw/sec/ for the ingest lane. Pure script, wakeAgent=false.",
+    "script": "/opt/data/scripts/okpack_sec_feed_fetch.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "7f71ae2702fb",
+    "name": "okpack-sec-threat-brief",
+    "enabled": true,
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:daily"
+    },
+    "workdir": "/opt/vault",
+    "enabled_toolsets": [
+      "hermes-cron",
+      "okengine"
+    ],
+    "prompt": "Daily security brief. Your FIRST response MUST be a tool call: file_read on /opt/vault/wiki/HOT.md (the derived load-first set: recent sources, recently-updated entities, open predictions). Then write today's brief to /opt/vault/wiki/briefings/<YYYY-MM-DD>.md (frontmatter: type: dashboard, title, published: <YYYY-MM-DD> \u2014 published drives tier recency) summarizing the 3-5 most significant developments (new campaigns / actors / exploited CVEs / notable techniques), each 2-3 sentences with [[wikilinks]] to the entities + their source. Analyst-grade and terse; skip 101 explanation. LOCAL-ONLY: do not use web tools. Write each [[wikilink]] as [[entities/<first-letter>/<slug>|Display]] (entity pages live under entities/, sharded by the slug's first letter) and ONLY link pages you've confirmed exist via the okengine read tools \u2014 do not construct a path from the name/type. A no_agent pass (okpack-sec-brief-linkfix) also normalizes/repairs these links after you write.",
+    "deliver": "local"
+  },
+  {
+    "id": "a77ac51d6e01",
+    "name": "okpack-sec-attack-import",
+    "enabled": true,
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Import the MITRE ATT&CK catalog (techniques + threat-actor groups) as canonical attack-pattern/intrusion-set pages. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/okpack_sec_attack_import.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "be5e21c0a44b",
+    "name": "okpack-sec-kev-import",
+    "enabled": true,
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:daily"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Flag CISA Known Exploited Vulnerabilities (actively-exploited) on vulnerability pages. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/okpack_sec_kev_import.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "d0e1f2a3b4c5",
+    "name": "okpack-sec-nvd-import",
+    "enabled": true,
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:daily"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Enrich vulnerability pages with NVD CVSS/CWE (bounded: recent window). Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/okpack_sec_nvd_import.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "7c5d3e9f1a2b",
+    "name": "okpack-sec-tgc-import",
+    "enabled": true,
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Import ThaiCERT Threat Group Cards \u2014 enrich/expand intrusion-set pages. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/okpack_sec_tgc_import.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "9b2e4c7a8d31",
+    "name": "okpack-sec-tgc-tools-import",
+    "enabled": true,
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Import ThaiCERT Threat Group Cards (Tools) \u2014 enrich/expand malware + tool pages. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/okpack_sec_tgc_tools_import.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "c4f0a1b2d3e6",
+    "name": "okpack-sec-msft-import",
+    "enabled": true,
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Import the Microsoft / Rosetta Stone threat-actor mapping as per-source intrusion-set observation records (cross-vendor alias backbone). Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/okpack_sec_msft_import.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "b8d1e3f5a7c2",
+    "name": "okpack-sec-attack-refs-import",
+    "enabled": true,
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Mint citing source pages from each MITRE ATT&CK group's reference bibliography (Admiralty-scored provenance backbone for actor enrichment). Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/okpack_sec_attack_refs_import.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "393b5e280292",
+    "name": "okpack-sec-brief-linkfix",
+    "enabled": true,
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:6h"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "okpack-sec brief link repair: normalize wikilinks in wiki/briefings/ to verified canonical entity paths (resolve by slug/mitre_id/cve_id) and demote dead links to text \u2014 no broken links in a published brief.",
+    "script": "/opt/data/scripts/okpack_sec_brief_linkfix.py",
+    "deliver": "local",
+    "no_agent": true
+  }
+]
