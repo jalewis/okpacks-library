@@ -1,0 +1,29 @@
+{
+  "bundle": {
+    "id": "bundle--d2ebdb8d-d130-5b63-b751-1b6c0e891335",
+    "objects": [
+      {
+        "aliases": [
+          "SolarWinds Worldwide LLC"
+        ],
+        "created": "2026-01-01T00:00:00.000Z",
+        "description": "US IT-management software vendor; supply-chain vector in the SUNBURST campaign.",
+        "id": "identity--360f39f1-3398-5256-98a8-d3b4b4665e98",
+        "identity_class": "organization",
+        "labels": [
+          "vendor",
+          "supply-chain-victim"
+        ],
+        "modified": "2026-01-01T00:00:00.000Z",
+        "name": "SolarWinds",
+        "sectors": [
+          "technology"
+        ],
+        "spec_version": "2.1",
+        "type": "identity"
+      }
+    ],
+    "type": "bundle"
+  },
+  "loss": []
+}

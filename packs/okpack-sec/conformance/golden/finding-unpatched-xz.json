@@ -1,0 +1,35 @@
+{
+  "bundle": {
+    "id": "bundle--ec133b60-7b73-53db-8fe7-3c09e5a662af",
+    "objects": [
+      {
+        "created": "2026-06-16T00:00:00.000Z",
+        "id": "x-okfsec-finding--6e2dc35f-46f8-5ef2-b766-a7120792a328",
+        "labels": [
+          "exposure"
+        ],
+        "modified": "2026-06-16T00:00:00.000Z",
+        "name": "Unpatched xz on production hosts",
+        "spec_version": "2.1",
+        "type": "x-okfsec-finding",
+        "x_okfsec_severity": "high",
+        "x_okfsec_status": "open"
+      },
+      {
+        "created": "2026-06-16T00:00:00.000Z",
+        "id": "relationship--ace5353f-78c6-5a3a-a600-34954da8b57d",
+        "modified": "2026-06-16T00:00:00.000Z",
+        "relationship_type": "related-to",
+        "source_ref": "x-okfsec-finding--6e2dc35f-46f8-5ef2-b766-a7120792a328",
+        "spec_version": "2.1",
+        "target_ref": "vulnerability--8c66e045-a162-5fc8-9305-ed97819d4261",
+        "type": "relationship"
+      }
+    ],
+    "type": "bundle"
+  },
+  "loss": [
+    "severity",
+    "status"
+  ]
+}

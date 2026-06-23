@@ -1,0 +1,39 @@
+{
+  "bundle": {
+    "id": "bundle--c6d484f8-1548-5a41-a585-2bdaba7fb5eb",
+    "objects": [
+      {
+        "created": "2026-06-16T00:00:00.000Z",
+        "description": "Block process behaviors associated with technique abuse.",
+        "external_references": [
+          {
+            "external_id": "M1040",
+            "source_name": "mitre-attack",
+            "url": "https://attack.mitre.org/mitigations/M1040/"
+          }
+        ],
+        "id": "course-of-action--0aaa904a-ebb2-58bc-bbf4-b505e3c163e2",
+        "labels": [
+          "mitigation",
+          "endpoint"
+        ],
+        "modified": "2026-06-16T00:00:00.000Z",
+        "name": "Behavior Prevention on Endpoint",
+        "spec_version": "2.1",
+        "type": "course-of-action"
+      },
+      {
+        "created": "2026-06-16T00:00:00.000Z",
+        "id": "relationship--2266363b-2d5e-5ca6-a921-c639970d9eee",
+        "modified": "2026-06-16T00:00:00.000Z",
+        "relationship_type": "mitigates",
+        "source_ref": "course-of-action--0aaa904a-ebb2-58bc-bbf4-b505e3c163e2",
+        "spec_version": "2.1",
+        "target_ref": "attack-pattern--3c05109a-7e2a-5d07-9b01-18e01efa0731",
+        "type": "relationship"
+      }
+    ],
+    "type": "bundle"
+  },
+  "loss": []
+}
