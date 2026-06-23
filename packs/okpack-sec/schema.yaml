@@ -1,0 +1,362 @@
+# OKF domain contract for: okpack-sec — the public security reference pack.
+# This is the machine form of OKF-SEC-SPEC.md (the normative profile). The engine
+# reads this (never hardcodes layout). Canonical type names follow STIX 2.1 SDOs where one
+# exists; legacy/vault names are accepted via `type_aliases`. See the spec for projection.
+version: 1
+okf_sec_version: "0.2"   # okf-sec spec version this pack conforms to (spec §12.1)
+apply_under: [wiki/]
+exclude:
+  - wiki/operational/
+  - wiki/observations/   # per-source records (multi-source MDM; okengine#38) — hidden from the
+                         # browse rail; reached via drill-down from the canonical entity page
+
+okf:
+  required: [type]            # OKF v0.1 base: every page needs a type
+# Envelope fields any page MAY carry (see spec §2). `refs` = cross-standard ID list
+# ({std,id,url} -> STIX external_references); `rels` = typed predicates (-> STIX SROs).
+common_optional: [title, name, description, aliases, tags, created, updated,
+                  first_seen, last_seen, related, rels, sources, refs, tlp,
+                  mitre_id, cve_id, confidence]
+
+# How each namespace buckets on disk (read by okf_migrate / reshelve / reshard).
+partitioning:
+  reshard_over: 500
+  namespaces:
+    entities:    {strategy: by-letter, reshard_by: second-letter}   # all entity-typed pages (STIX SDO nouns)
+    sources:     {strategy: by-date, date_field: published, reshard_by: day}
+    concepts:    {strategy: by-letter, reshard_by: second-letter}
+    predictions: {strategy: flat}
+    findings:    {strategy: flat}                                   # analyst output — human-authored (see permissions)
+    briefings:   {strategy: flat}                                   # daily brief — one dated page/day (cron: okpack-sec-threat-brief)
+
+# The agent's load-first working set (build_hot_set -> wiki/HOT.md).
+hot_set:
+  days: 30
+  cap: 300
+  sections:
+    - {kind: open, namespace: predictions, status_field: status, open_values: [open, active], secondary_field: resolves_by, title: "Open predictions"}
+    - {kind: recent, namespace: sources, date_field: published, layout: by-date, title: "Recent sources"}
+    - {kind: recent, namespace: entities, date_field: updated, show_type: true, title: "Recently-updated entities"}
+
+# Write-permission matrix (conformance G2) — enforced by the MCP write path
+# (okengine-write). default delete:false => tombstone, never hard-rm; a
+# namespace may set create/update:false to mark it human-authored.
+permissions:
+  default: {create: true, update: true, delete: false}
+  namespaces:
+    # OKF-SEC human-only gate: analysts author findings (via git), the agent may
+    # READ but not create/update them — enforced at the MCP write path.
+    findings: {create: false, update: false}
+
+# Review trust model (conformance G3) — FLAG, not gate. An agent asserting a
+# categorical confidence verdict (or a review field) doesn't block; the write
+# lands and the page is flagged (needs_review + wiki/_review-queue.md). Numeric
+# confidence + low/med/high never flag.
+review:
+  confidence_field: confidence
+  confidence_review_values: [confirmed, false-positive, refuted]
+  review_on_change_fields: []
+
+# Hot/warm/cold tiers (conformance G4) — DERIVED at query time (tier_lib), never
+# stored. Read by the tier-refresh cron + the --tier filter in kb_search/okengine-mcp.
+# by-date namespaces derive the date from the path; open predictions floor at hot.
+tier:
+  hot_days: 30
+  warm_days: 365
+  namespaces:
+    sources:     {date_field: published, from_path: true}
+    entities:    {date_field: updated}
+    concepts:    {date_field: updated}
+    predictions: {date_field: resolves_by, status_field: status, open_values: [open, active], open_floor: hot}
+    briefings:   {date_field: published}
+
+# OKF-SEC types (canonical = STIX 2.1 SDO name where one exists; see spec §3–7).
+# RULE: types carry *kind*, fields carry *specificity* — a CVE is a `vulnerability`
+# with a cve_id, not its own type. Required lists hold identity/load-bearing fields
+# only (flag-not-gate: a missing required field flags for review, never rejects).
+types:
+  # Composable-okpacks identity (engine conformance §5): `owner` = the pack that mutates the type
+  # (all okf-sec types are owned by okpack-sec); `id_authority`/`id_field` mint a deterministic
+  # `<authority>:<id>` page id (else the engine mints a slug). mitre/cve-backed types declare theirs.
+  # --- intel provenance: Admiralty-scored; projects to STIX `report` ---
+  source:           {required: [type, source_kind, publisher, published, reliability, credibility], owner: okpack-sec}
+  # --- security entities (live under wiki/entities/, bucketed by letter) ---
+  vulnerability:    {required: [type], id_authority: cve, id_field: cve_id, owner: okpack-sec}   # cve_id nullable (0-days) → minted-slug fallback
+  attack-pattern:   {required: [type, mitre_id], id_authority: mitre, id_field: mitre_id, owner: okpack-sec}   # ATT&CK (sub)technique [alias: technique]
+  threat-actor:     {required: [type], owner: okpack-sec}                 # a named INDIVIDUAL human operator (rare); groups/crews → intrusion-set
+  intrusion-set:    {required: [type], owner: okpack-sec}                 # DEFAULT for any named adversary group/cluster/crew (APT29, ransomware crews) [alias: group]
+  malware:          {required: [type], owner: okpack-sec}                 # category (ransomware/loader/…) is a field
+  tool:             {required: [type], owner: okpack-sec}                 # legitimate/dual-use tooling used by actors
+  software:         {required: [type], owner: okpack-sec}                 # affected/benign software/product [alias: product]
+  campaign:         {required: [type], owner: okpack-sec}                 # a named operation
+  incident:         {required: [type], owner: okpack-sec}                 # a security incident: breach / attack-event (STIX 2.1 incident SDO); fields: incident_type, sector, affected_count, date_disclosed, vector, data_exposed, actor→intrusion-set
+  indicator:        {required: [type, ioc_type, value], owner: okpack-sec}   # ioc_type: ip|domain|hash|url|email [alias: ioc] — named only
+  infrastructure:   {required: [type], owner: okpack-sec}                 # adversary/asset infra: ASN, IP block, C2 [alias: host]
+  identity:         {required: [type, identity_class], owner: okpack-sec} # vendor/org/person/agency [aliases below]
+  course-of-action: {required: [type, mitre_id], id_authority: mitre, id_field: mitre_id, owner: okpack-sec}   # ATT&CK Mxxxx [alias: mitigation]
+  detection:        {required: [type, rule_format], owner: okpack-sec}    # sigma|yara|suricata|… (okf-native; no STIX SDO)
+  concept:          {required: [type], owner: okpack-sec}                 # segment / TTP cluster / pattern (grouping; no SDO)
+  # --- analyst output + synthesis (okf-native / OCSF layer) ---
+  finding:          {required: [type, severity, status], owner: okpack-sec}   # human-authored; severity required = okpack-sec tightening vs base [type,status] (spec §10.6); -> OCSF finding
+  prediction:       {required: [type, status, confidence, subject, resolves_by], owner: okpack-sec}
+  dashboard:        {required: [type, title], owner: okpack-sec}
+
+# Legacy/vault type names accepted on read & normalized to canonical (spec §1, §7).
+# `entity` (generic catch-all) is intentionally NOT aliased — it must be retyped.
+type_aliases:
+  cve:                vulnerability
+  technique:          attack-pattern
+  ioc:                indicator
+  host:               infrastructure
+  product:            software
+  group:              intrusion-set
+  apt-group:          intrusion-set
+  mitigation:         course-of-action
+  ransomware:         malware
+  ransomware-family:  malware
+  vendor:             identity
+  organization:       identity
+  company:            identity
+  person:             identity
+  agency:             identity
+  government-agency:  identity
+  government-entity:  identity
+  team:               identity
+
+# Field-drift normalization — applied by the okengine-write MCP before write (okengine#46),
+# so agent writes converge on this pack's vocabulary instead of drifting. field_aliases rename
+# a key; value_aliases map a field's values. (status is intentionally NOT here: "active" is a
+# valid prediction/exploitation_status value, only entities use "live" — too contextual to
+# remap blindly.)
+field_aliases:
+  country:      suspected_origin
+  origin:       suspected_origin
+  nation:       suspected_origin
+value_aliases:
+  suspected_origin:          # ISO-3166 alpha-2 -> the full names this vault uses canonically
+    CN: China
+    US: United States
+    RU: Russia
+    KP: North Korea
+    KR: South Korea
+    IR: Iran
+    IN: India
+    PK: Pakistan
+    IL: Israel
+    GB: United Kingdom
+    UK: United Kingdom
+    FR: France
+    DE: Germany
+    VN: Vietnam
+    SY: Syria
+    BY: Belarus
+    TR: Turkey
+    LB: Lebanon
+    UA: Ukraine
+    CA: Canada
+    CO: Colombia
+    ES: Spain
+    ID: Indonesia
+    IT: Italy
+    KZ: Kazakhstan
+    LY: Libya
+    MX: Mexico
+    PS: Palestine
+    TN: Tunisia
+    UZ: Uzbekistan
+    YE: Yemen
+    SG: Singapore
+    JP: Japan
+    TW: Taiwan
+    AU: Australia
+    SA: Saudi Arabia
+    AE: United Arab Emirates
+    EG: Egypt
+    IQ: Iraq
+    AF: Afghanistan
+    TH: Thailand
+    MY: Malaysia
+    PH: Philippines
+    NL: Netherlands
+    RO: Romania
+    PL: Poland
+    BR: Brazil
+    NG: Nigeria
+
+# Reader "browse by kind" groups — label -> page types. The okengine-reader reads
+# these to offer a BY KIND rail (e.g. all "Threat actors" across namespaces),
+# independent of the by-letter on-disk partitioning. Pure presentation; the engine
+# is domain-agnostic, so the security labels live here in the pack.
+display_groups:
+  Threat actors:      [intrusion-set, threat-actor]
+  Malware & tooling:  [malware, tool, software]
+  ATT&CK techniques:  [attack-pattern]
+  Vulnerabilities:    [vulnerability]
+  Campaigns:          [campaign]
+  Incidents:          [incident]
+  Defenses:           [course-of-action, detection]
+  Indicators & infra: [indicator, infrastructure, identity]
+
+# Reader top "outputs" section — the SYNTHESIZED products (what you read), pinned
+# above the raw storage namespaces. The reader shows `label` as the first rail
+# section, listing the member namespaces that have pages (so predictions/trends
+# slot in automatically as they fill). Distinct from `namespaces` on disk.
+rail_top_section:
+  label: ANALYSIS
+  namespaces: [briefings, trends, predictions, findings]
+
+# Source-reliability registry (multi-source entity resolution; okengine#38). Each ingest
+# source carries a STANDING Admiralty reliability (A-F) used as the fusion weight when two
+# sources disagree on a canonical entity's field. The `key` is the observations/<key>/
+# subdir AND the `source:` stamp each importer writes onto its observation pages; the
+# deterministic canonical assembler reads this to pick the headline value (preserving all
+# values with attribution + flagging material conflicts). `credibility` is per-claim — from
+# the source when it expresses one, else `credibility_default`. Reference datasets declare
+# reliability here; agent-ingested FEED sources are Admiralty-scored per page instead and
+# carry their own. `reliability`/`credibility_default` reuse the enums below.
+source_registry:
+  mitre-attack:
+    name: "MITRE ATT&CK"
+    class: framework            # framework | vendor | community | government | feed
+    url: https://attack.mitre.org/
+    reliability: A              # authoritative, peer-reviewed taxonomy
+    credibility_default: "2"
+    # attack_import.py: technique/group/software/mitigation catalog. attack_refs_import.py: mints
+    # citing `source` pages from each group's external_references bibliography (okpacks-library#2).
+    importers: [okpack_sec_attack_import.py, okpack_sec_attack_refs_import.py]
+  thaicert:
+    name: "ThaiCERT / ETDA Threat Group Cards"
+    class: community
+    url: https://apt.etda.or.th/
+    reliability: B              # well-curated community encyclopedia
+    credibility_default: "3"
+    importers: [okpack_sec_tgc_import.py, okpack_sec_tgc_tools_import.py]
+  cisa-kev:
+    name: "CISA Known Exploited Vulnerabilities"
+    class: government
+    url: https://www.cisa.gov/kev
+    reliability: A              # govt confirmation of active exploitation
+    credibility_default: "1"
+    importers: [okpack_sec_kev_import.py]
+  nvd:
+    name: "NVD (NIST National Vulnerability Database)"
+    class: government
+    url: https://nvd.nist.gov/
+    reliability: A
+    credibility_default: "2"
+    importers: [okpack_sec_nvd_import.py]
+  microsoft:
+    name: "Microsoft Threat Intelligence (+ MS/CrowdStrike Rosetta Stone)"
+    class: vendor
+    url: https://github.com/microsoft/mstic
+    reliability: A              # first-party telemetry, broad visibility
+    credibility_default: "2"
+    importers: [okpack_sec_msft_import.py]   # MicrosoftMapping.json (Rosetta Stone alias backbone)
+
+# Canonical-assembly merge policy (multi-source fusion; okengine#38). How the deterministic
+# assembler (canonical_assemble.py) fuses each field across a canonical entity's per-source
+# observations:
+#   union     — combine all values, deduped, order-stable (additive sets/relationships).
+#   consensus — headline value = highest source reliability (recency tiebreak); ALL distinct
+#               values preserved with attribution; >1 distinct value flags review (G3).
+#   latest    — most-recently-observed value wins (evolving status).
+# A field not listed defaults by value shape: lists -> union, scalars -> consensus. Names
+# match entity frontmatter (common_optional + per-type fields).
+merge_policy:
+  union:     [aliases, target_sectors, tags, refs, rels, sources, related, malware_type,
+              motivation]   # multi-valued: different source cards list different subsets
+  consensus: [suspected_origin, category, severity, cvss, tlp, identity_class,
+              actor_class, sophistication, resource_level, ioc_type, infra_type]
+              # cvss is consensus (not latest): sources (NVD/KEV/vendor) legitimately
+              # disagree on the vector — preserve all with attribution + flag, don't let
+              # the newest silently win (okengine#40).
+  latest:    [last_seen, exploitation, kev, epss]
+
+# Closed value vocabularies — machine form of OKF-SEC-SPEC.md §9.2. The engine
+# ignores these keys; this repo's validate.py checks page frontmatter values against them
+# (a missing value never fails; a WRONG value fails unless the field is marked extensible).
+enums:
+  tlp:                 [clear, green, amber, amber+strict, red]
+  severity:            [none, low, medium, high, critical]
+  reliability:         [A, B, C, D, E, F]
+  credibility:         ["1", "2", "3", "4", "5", "6"]
+  source_kind:         [advisory, vendor-research, incident-report, news, blog]
+  bias_flags:          [vendor-commercial, single-witness, attribution-speculative, sensationalized, state-aligned]
+  ioc_type:            [ip, domain, hash, url, email, file, mutex, registry-key, user-agent]
+  infra_type:          [asn, ip-block, c2, server, domain-front, botnet, hosting-malware,
+                        phishing, staging, exfiltration, anonymization, reconnaissance, undefined]
+  identity_class:      [individual, group, organization, system, class, unknown]
+  sector:              [agriculture, aerospace, automotive, chemical, commercial, communications,
+                        construction, defense, education, energy, entertainment, financial-services,
+                        government, healthcare, hospitality-leisure, infrastructure, insurance,
+                        manufacturing, mining, non-profit, pharmaceuticals, retail, technology,
+                        telecommunications, transportation, utilities]
+  actor_class:         [nation-state, crime-syndicate, criminal, hacker, activist, insider-accidental,
+                        insider-disgruntled, competitor, spy, terrorist, sensationalist, unknown]
+  sophistication:      [none, minimal, intermediate, advanced, expert, innovator, strategic]
+  resource_level:      [individual, club, contest, team, organization, government]
+  motivation:          [accidental, coercion, dominance, ideology, notoriety, organizational-gain,
+                        personal-gain, personal-satisfaction, revenge, unpredictable]
+  malware_category:    [adware, backdoor, bootkit, bot, ddos, downloader, dropper, exploit-kit,
+                        keylogger, ransomware, remote-access-trojan, resource-exploitation,
+                        rogue-security-software, rootkit, screen-capture, spyware, trojan, virus,
+                        webshell, wiper, worm, unknown]
+  tool_category:       [denial-of-service, exploitation, information-gathering, network-capture,
+                        credential-exploitation, remote-access, vulnerability-scanning, unknown]
+  rule_format:         [sigma, yara, yara-l, suricata, snort, kql, spl, eql, osquery]
+  exploitation_status: [unreported, poc, active, weaponized]
+  prediction_status:   [open, confirmed, refuted, partial, expired-ungraded]
+  finding_status:      [investigating, open, confirmed, resolved, dismissed]
+  incident_type:       [breach, data-leak, ransomware, extortion, defacement, ddos, wiper,
+                        supply-chain, espionage, bec, fraud, account-compromise, outage, unknown]
+  horizon:             [short, medium, long, strategic]
+  ref_std:             [cve, cwe, capec, mitre-attack, mitre-d3fend, nvd, ghsa, cpe, cisa-kev,
+                        epss, misp, stix, vendor-advisory, url]
+  cvss_version:        ["2.0", "3.0", "3.1", "4.0"]
+
+# Which frontmatter field draws from which enum. `enum:` applies to any type; `by_type:`
+# scopes a field whose vocabulary depends on the page type. `extensible: true` => unknown
+# values WARN (open vocab) instead of FAIL. Dotted keys address a nested scalar/list.
+field_enums:
+  tlp:                 {enum: tlp}
+  severity:            {enum: severity}
+  reliability:         {enum: reliability}
+  credibility:         {enum: credibility}
+  source_kind:         {enum: source_kind}
+  bias_flags:          {enum: bias_flags, extensible: true}
+  ioc_type:            {enum: ioc_type, extensible: true}
+  infra_type:          {enum: infra_type}
+  identity_class:      {enum: identity_class}
+  actor_class:         {enum: actor_class}
+  sophistication:      {enum: sophistication}
+  resource_level:      {enum: resource_level}
+  rule_format:         {enum: rule_format, extensible: true}
+  horizon:             {enum: horizon}
+  exploitation.status: {enum: exploitation_status}
+  motivation.primary:  {enum: motivation}
+  motivation.secondary: {enum: motivation}
+  targets.sectors:     {enum: sector, extensible: true}
+  incident_type:       {enum: incident_type, extensible: true}
+  status:              {by_type: {prediction: prediction_status, finding: finding_status}}
+  category:            {by_type: {malware: malware_category, tool: tool_category}}
+
+# Controlled `rels:` predicate vocabulary (machine form of spec §6). validate.py warns on a page
+# `rels` key outside this set (flag-not-gate, per §6.4). Canonical predicate name == STIX
+# relationship_type; reverse aliases flip on projection; okf-native have no STIX SRO.
+rels_vocabulary:
+  canonical: [uses, uses-technique, uses-malware, uses-tool, targets, attributed-to, authored-by,
+              owns, compromises, exploits, delivers, downloads, drops, variant-of, communicates-with,
+              beacons-to, exfiltrates-to, controls, consists-of, hosts, resolves-to, indicates,
+              mitigates, subtechnique-of, originates-from, located-at, related-to]
+  reverse: [used-by, exploited-by, mitigated-by, detected-by, owned-by, hosted-by, affected-by,
+            attributed-campaigns]
+  okf_native: [detects, affects]
+
+# Enum checks for list-of-object fields — each item's subkey value ∈ the named enum.
+# `extensible: true` => unknown value warns (open vocab) instead of failing.
+list_field_enums:
+  refs:
+    std:      {enum: ref_std, extensible: true}
+  cvss:
+    version:  {enum: cvss_version}
+    severity: {enum: severity}

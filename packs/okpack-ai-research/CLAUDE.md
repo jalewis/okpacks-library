@@ -1,0 +1,68 @@
+# AI / LLM Research Watch — domain pack persona & curation rules
+
+This is the guidance the engine's cron agents read at runtime (`$WIKI_PATH/CLAUDE.md`).
+It is the *domain voice + workflow*, distinct from the OKEngine repo's dev/ops CLAUDE.md.
+
+## Mission
+
+Maintain a compounding knowledge base of the AI / LLM research frontier — models,
+the labs and researchers behind them, the techniques and benchmarks that matter,
+and falsifiable predictions about what ships next. Compress a noisy firehose of
+papers and lab posts into a navigable, cross-linked wiki for a technical reader.
+
+## Positioning
+
+- **Filter, not feed** — compress sources into structured pages; never mirror the feed.
+- **Compounding KB, not RAG** — compile once into entities/concepts/predictions and
+  maintain over time; don't re-derive per query.
+- **Audience: a senior ML practitioner.** Skip 101 explanations (what an LLM is, what
+  attention is). Lead with what's *new* and *load-bearing*: a capability jump, a new
+  architecture, a benchmark result that moves the frontier, a credible release signal.
+
+## Ingest workflow (sources → entities / concepts / predictions)
+
+Follow the §Ingest pattern in `docs/deploy-a-new-domain.md` (in the OKEngine repo,
+pinned engine-v0.2.0 — see `engine.version`). For each raw item:
+1. **Source page** (`type: source`, keyed by `raw:` for dedupe; `source_kind`:
+   `paper` | `lab-post` | `release` | `commentary` | `news` — see `schema.yaml` `enums`;
+   `published`). One per ingested item.
+2. **Entities worth tracking over time** — create/update pages for:
+   - `model` — a released or announced model/system (capabilities, params if stated,
+     lab, release date, benchmark results).
+   - `lab` — an org (industry lab, academic group) producing models/research.
+   - `researcher` — a notable author when they recur across the corpus.
+   - `benchmark` / `dataset` — an eval or dataset that papers report against.
+   Cross-link: model ↔ lab ↔ researcher ↔ technique ↔ benchmark.
+3. **Concepts** (`type: technique` or `concept`) — a method/architecture/research
+   theme (e.g. mixture-of-experts, RLHF, retrieval augmentation, test-time compute)
+   synthesized from the citing sources, not a single paper restated.
+4. **Prediction** — file ONLY for an explicit, dated, falsifiable claim (see below).
+   Conservative bias: coverage is not the goal; defer when no observable claim exists.
+
+Relevance triage: a single incremental arXiv paper usually becomes a source +
+maybe a technique cross-link, NOT its own entity. Reserve entities for subjects
+worth maintaining across many sources.
+
+WRITE via the enforced MCP write path (`mcp_okengine_write_create_entity` /
+`update_entity` / `append_to_section`), NOT raw file writes. For LIST fields
+(`sources:`, `authors:`) read first, append, send the COMPLETE list.
+LOCAL-ONLY: do not call web tools (no shared paid budget). Append one
+`wiki/log.md` summary line per run.
+
+## Predictions
+
+A prediction is a specific, observable, **dated** claim with a `## What would
+refute this` section. Required frontmatter (per `schema.yaml`): `status`
+(open/active/confirmed/refuted/partial), `confidence` (0–1 or low/med/high),
+`subject` (the entity it's about), `resolves_by` (a date). Examples that qualify:
+"Lab X releases a model exceeding benchmark Y's current SOTA by ≥N points before
+<date>"; "Technique Z appears in ≥3 frontier model reports by <date>." Vague
+"AI will get better" claims do NOT qualify.
+
+## Domain pointers
+
+- **Entity types:** `model`, `lab`, `researcher`, `technique`, `benchmark`,
+  `dataset` (entities/ + concepts/ namespaces).
+- **Canonical naming:** slugify to the common short name (e.g. a model's released
+  name, a lab's common name); dedupe aliases via wikilink variants.
+- Keep claims attributable — every assertion traces to a `source` page.

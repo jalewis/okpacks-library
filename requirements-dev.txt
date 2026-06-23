@@ -1,0 +1,8 @@
+# Full local checks — everything in requirements.txt plus the official standards
+# validators the okpack-sec conformance suite proves against (STIX 2.1 + OCSF).
+# Without these the conformance suite runs DEGRADED (structural + golden only); CI
+# installs them and runs full-strength. Install with:
+#   pip install -r requirements-dev.txt
+-r requirements.txt
+stix2
+py-ocsf-models

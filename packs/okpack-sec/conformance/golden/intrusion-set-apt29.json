@@ -1,0 +1,99 @@
+{
+  "bundle": {
+    "id": "bundle--cf0d11e1-db17-542c-84c7-c82b794d9032",
+    "objects": [
+      {
+        "aliases": [
+          "Cozy Bear",
+          "Midnight Blizzard",
+          "Nobelium",
+          "The Dukes"
+        ],
+        "created": "2026-06-16T00:00:00.000Z",
+        "description": "Russian SVR-attributed cyber-espionage group targeting government, diplomatic, and tech sectors; known for stealthy, long-dwell intrusions and supply-chain operations.",
+        "external_references": [
+          {
+            "external_id": "G0016",
+            "source_name": "mitre-attack",
+            "url": "https://attack.mitre.org/groups/G0016/"
+          }
+        ],
+        "first_seen": "2008-01-01T00:00:00.000Z",
+        "id": "intrusion-set--ee72c5b8-b203-5c79-9743-87a1bdd179fe",
+        "labels": [
+          "russia",
+          "svr",
+          "espionage",
+          "apt"
+        ],
+        "modified": "2026-06-16T00:00:00.000Z",
+        "name": "APT29",
+        "primary_motivation": "organizational-gain",
+        "resource_level": "government",
+        "secondary_motivations": [
+          "espionage"
+        ],
+        "sophistication": "strategic",
+        "spec_version": "2.1",
+        "type": "intrusion-set",
+        "x_okfsec_active": true,
+        "x_okfsec_attribution": {
+          "confidence": "high",
+          "country": "RU",
+          "sponsor": "SVR"
+        },
+        "x_okfsec_targets": {
+          "countries": [
+            "US",
+            "UA"
+          ],
+          "regions": [
+            "NA",
+            "EU"
+          ],
+          "sectors": [
+            "government",
+            "defense",
+            "technology"
+          ]
+        }
+      },
+      {
+        "created": "2026-06-16T00:00:00.000Z",
+        "id": "relationship--4b4f4d99-e3cd-5636-8910-4f82c93cbb65",
+        "modified": "2026-06-16T00:00:00.000Z",
+        "relationship_type": "uses",
+        "source_ref": "intrusion-set--ee72c5b8-b203-5c79-9743-87a1bdd179fe",
+        "spec_version": "2.1",
+        "target_ref": "attack-pattern--3c05109a-7e2a-5d07-9b01-18e01efa0731",
+        "type": "relationship"
+      },
+      {
+        "created": "2026-06-16T00:00:00.000Z",
+        "id": "relationship--737cbe2a-6827-5fda-83b9-95aa6dfc3826",
+        "modified": "2026-06-16T00:00:00.000Z",
+        "relationship_type": "uses",
+        "source_ref": "intrusion-set--ee72c5b8-b203-5c79-9743-87a1bdd179fe",
+        "spec_version": "2.1",
+        "target_ref": "malware--28abeb24-bb1a-58ab-8792-4387afb20806",
+        "type": "relationship"
+      },
+      {
+        "created": "2026-06-16T00:00:00.000Z",
+        "id": "relationship--09bd1ea4-aa87-5710-b212-aa7696fa7190",
+        "modified": "2026-06-16T00:00:00.000Z",
+        "relationship_type": "attributed-to",
+        "source_ref": "campaign--c7e9bdf5-6c0d-546a-bcf8-0b8713703e90",
+        "spec_version": "2.1",
+        "target_ref": "intrusion-set--ee72c5b8-b203-5c79-9743-87a1bdd179fe",
+        "type": "relationship"
+      }
+    ],
+    "type": "bundle"
+  },
+  "loss": [
+    "active",
+    "attribution",
+    "targets"
+  ]
+}

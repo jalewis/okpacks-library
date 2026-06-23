@@ -1,0 +1,67 @@
+{
+  "bundle": {
+    "id": "bundle--692e0159-4675-5f0a-94f2-638c6c5dbbc2",
+    "objects": [
+      {
+        "aliases": [
+          "UNC2452 campaign"
+        ],
+        "created": "2026-01-01T00:00:00.000Z",
+        "description": "Trojanized SolarWinds Orion updates delivered SUNBURST to ~18,000 orgs; selective follow-on intrusions.",
+        "first_seen": "2020-03-01T00:00:00.000Z",
+        "id": "campaign--40a0918d-4a22-5205-8940-79216045f5d9",
+        "labels": [
+          "supply-chain",
+          "espionage"
+        ],
+        "last_seen": "2020-12-01T00:00:00.000Z",
+        "modified": "2026-01-01T00:00:00.000Z",
+        "name": "SUNBURST / SolarWinds supply-chain",
+        "spec_version": "2.1",
+        "type": "campaign"
+      },
+      {
+        "created": "2026-01-01T00:00:00.000Z",
+        "id": "relationship--c58dfed2-e6c7-5fcf-9590-a23fafc1240f",
+        "modified": "2026-01-01T00:00:00.000Z",
+        "relationship_type": "attributed-to",
+        "source_ref": "campaign--40a0918d-4a22-5205-8940-79216045f5d9",
+        "spec_version": "2.1",
+        "target_ref": "threat-actor--3567af9c-ed8e-5f05-8de7-f614e884ca8b",
+        "type": "relationship"
+      },
+      {
+        "created": "2026-01-01T00:00:00.000Z",
+        "id": "relationship--3048ce35-614a-5f36-be2d-b2bfd3b95fea",
+        "modified": "2026-01-01T00:00:00.000Z",
+        "relationship_type": "uses",
+        "source_ref": "campaign--40a0918d-4a22-5205-8940-79216045f5d9",
+        "spec_version": "2.1",
+        "target_ref": "malware--36973fc3-179d-5994-a728-0bff141346ca",
+        "type": "relationship"
+      },
+      {
+        "created": "2026-01-01T00:00:00.000Z",
+        "id": "relationship--39c3272c-ac17-5e9c-82e8-318f5481d26e",
+        "modified": "2026-01-01T00:00:00.000Z",
+        "relationship_type": "exploits",
+        "source_ref": "campaign--40a0918d-4a22-5205-8940-79216045f5d9",
+        "spec_version": "2.1",
+        "target_ref": "vulnerability--6cf33d60-982a-58da-b140-86da124bc067",
+        "type": "relationship"
+      },
+      {
+        "created": "2026-01-01T00:00:00.000Z",
+        "id": "relationship--5aab4a30-fc1a-59a0-a862-057e3d07dfb9",
+        "modified": "2026-01-01T00:00:00.000Z",
+        "relationship_type": "targets",
+        "source_ref": "campaign--40a0918d-4a22-5205-8940-79216045f5d9",
+        "spec_version": "2.1",
+        "target_ref": "identity--b75c9f2f-f10d-5a1e-aed2-f4fc11b8be04",
+        "type": "relationship"
+      }
+    ],
+    "type": "bundle"
+  },
+  "loss": []
+}

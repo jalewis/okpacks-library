@@ -1,0 +1,60 @@
+[
+  {
+    "id": "a1f0c7d3e2b4",
+    "name": "okpack-ai-research-feed-fetch",
+    "enabled": true,
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:2h"
+    },
+    "workdir": "/opt/wiki",
+    "prompt": "okpack-ai-research feed pull: fetch the AI-research OPML into raw/ai/ for the ingest lane. Pure script, wakeAgent=false.",
+    "script": "/opt/data/scripts/okpack_ai_research_feed_fetch.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "c3a2f1e6d5b8",
+    "name": "okpack-ai-research-hf-import",
+    "enabled": true,
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/wiki",
+    "prompt": "Seed notable model pages from the Hugging Face hub (bounded top-N by likes). Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/okpack_ai_research_hf_import.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "d4b3c2a1f6e9",
+    "name": "okpack-ai-research-hf-papers-import",
+    "enabled": true,
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/wiki",
+    "prompt": "Seed source/paper pages from Hugging Face Daily Papers (bounded, upvote-curated). Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/okpack_ai_research_hf_papers_import.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "b2e1d8a4f3c5",
+    "name": "okpack-ai-research-weekly-brief",
+    "enabled": true,
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/wiki",
+    "enabled_toolsets": [
+      "hermes-cron",
+      "okengine"
+    ],
+    "prompt": "Weekly AI-research brief. Your FIRST response MUST be a tool call: file_read on wiki/HOT.md (the derived load-first set: recent sources, recently-updated entities, open predictions). Then write the brief to wiki/dashboards/<YYYY-MM-DD>.md (frontmatter: type: dashboard, title) covering the 4-6 most significant developments of the week — new models/capabilities, notable papers/techniques, benchmark movements, credible release signals — each 2-3 sentences with [[wikilinks]] to the entities + their source. Note any open prediction that moved. Practitioner-grade and terse; skip 101 explanation. LOCAL-ONLY: do not use web tools.",
+    "deliver": "local"
+  }
+]

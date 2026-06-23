@@ -1,0 +1,32 @@
+{
+  "bundle": {
+    "id": "bundle--adb0d238-2b27-5456-8f25-0f4ff583c9f3",
+    "objects": [
+      {
+        "confidence": 60,
+        "created": "2026-06-16T00:00:00.000Z",
+        "id": "x-okfsec-prediction--aeea0538-4591-52f1-a460-8b2fc8077175",
+        "labels": [
+          "forecast"
+        ],
+        "modified": "2026-06-16T00:00:00.000Z",
+        "name": "Another xz-style supply-chain RCE within 180 days",
+        "spec_version": "2.1",
+        "type": "x-okfsec-prediction",
+        "x_okfsec_horizon": "medium",
+        "x_okfsec_made_on": "2026-06-17",
+        "x_okfsec_resolves_by": "2026-12-31",
+        "x_okfsec_status": "open",
+        "x_okfsec_subject": "[[entities/concept/living-off-the-land]]"
+      }
+    ],
+    "type": "bundle"
+  },
+  "loss": [
+    "horizon",
+    "made_on",
+    "resolves_by",
+    "status",
+    "subject"
+  ]
+}

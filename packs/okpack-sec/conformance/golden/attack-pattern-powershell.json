@@ -1,0 +1,72 @@
+{
+  "bundle": {
+    "id": "bundle--e143f615-4404-54a9-821c-55594e12891a",
+    "objects": [
+      {
+        "created": "2026-06-16T00:00:00.000Z",
+        "description": "Adversaries abuse PowerShell for execution of commands, scripts, and in-memory payloads, often to evade disk-based detection.",
+        "external_references": [
+          {
+            "external_id": "T1059.001",
+            "source_name": "mitre-attack",
+            "url": "https://attack.mitre.org/techniques/T1059/001/"
+          },
+          {
+            "external_id": "CAPEC-242",
+            "source_name": "capec"
+          }
+        ],
+        "id": "attack-pattern--c75cdfc6-58fe-5ceb-86e3-ac6f8ac1b45f",
+        "kill_chain_phases": [
+          {
+            "kill_chain_name": "mitre-attack",
+            "phase_name": "execution"
+          }
+        ],
+        "labels": [
+          "lolbin",
+          "execution",
+          "windows"
+        ],
+        "modified": "2026-06-16T00:00:00.000Z",
+        "name": "PowerShell",
+        "spec_version": "2.1",
+        "type": "attack-pattern",
+        "x_mitre_detection": "Monitor for powershell.exe spawning with encoded commands; script-block logging (4104); unusual parent processes.",
+        "x_mitre_is_subtechnique": true,
+        "x_mitre_platforms": [
+          "windows"
+        ],
+        "x_okfsec_capec": [
+          "CAPEC-242"
+        ],
+        "x_okfsec_parent_technique": "T1059"
+      },
+      {
+        "created": "2026-06-16T00:00:00.000Z",
+        "id": "relationship--f767d2e1-6def-5841-842c-a2d277a04c9b",
+        "modified": "2026-06-16T00:00:00.000Z",
+        "relationship_type": "uses",
+        "source_ref": "threat-actor--3567af9c-ed8e-5f05-8de7-f614e884ca8b",
+        "spec_version": "2.1",
+        "target_ref": "attack-pattern--c75cdfc6-58fe-5ceb-86e3-ac6f8ac1b45f",
+        "type": "relationship"
+      },
+      {
+        "created": "2026-06-16T00:00:00.000Z",
+        "id": "relationship--cba0d716-28f5-5204-ac67-78909723a4aa",
+        "modified": "2026-06-16T00:00:00.000Z",
+        "relationship_type": "uses",
+        "source_ref": "malware--775d22ee-e968-533b-9bb7-b9fa9f20d7a9",
+        "spec_version": "2.1",
+        "target_ref": "attack-pattern--c75cdfc6-58fe-5ceb-86e3-ac6f8ac1b45f",
+        "type": "relationship"
+      }
+    ],
+    "type": "bundle"
+  },
+  "loss": [
+    "capec",
+    "parent_technique"
+  ]
+}
