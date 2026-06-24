@@ -1,0 +1,36 @@
+{
+  "bundle": {
+    "id": "bundle--0fc26151-dde4-5e1e-8347-7e71f833b7b3",
+    "objects": [
+      {
+        "confidence": 50,
+        "created": "2026-01-01T00:00:00.000Z",
+        "id": "x-okfsec-detection--fa2fa188-756e-51db-b7e8-b68adbe17874",
+        "labels": [
+          "sigma",
+          "powershell",
+          "execution"
+        ],
+        "modified": "2026-01-01T00:00:00.000Z",
+        "name": "Sigma \u2014 encoded PowerShell with anomalous parent",
+        "spec_version": "2.1",
+        "type": "x-okfsec-detection",
+        "x_okfsec_rule_format": "sigma"
+      },
+      {
+        "created": "2026-01-01T00:00:00.000Z",
+        "id": "relationship--bc7441ca-c9f2-594c-b4cc-8d66cd73cf46",
+        "modified": "2026-01-01T00:00:00.000Z",
+        "relationship_type": "x_okfsec_detects",
+        "source_ref": "x-okfsec-detection--fa2fa188-756e-51db-b7e8-b68adbe17874",
+        "spec_version": "2.1",
+        "target_ref": "attack-pattern--3c05109a-7e2a-5d07-9b01-18e01efa0731",
+        "type": "relationship"
+      }
+    ],
+    "type": "bundle"
+  },
+  "loss": [
+    "rule_format"
+  ]
+}

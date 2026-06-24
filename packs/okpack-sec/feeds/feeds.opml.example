@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- okpack-sec SUGGESTED feed sources — public security / threat-intel RSS+Atom feeds.
+     DISABLED BY DEFAULT: this is a suggestion list, not active config. To enable,
+     copy entries into feeds/feeds.opml (review each first) and turn on the cron —
+     see README §"Enabling data sources". Shipping these active would point every
+     deployment at the same origins at the same time (a thundering herd); opt in
+     deliberately and jitter your schedule.
+     All 27 probed live (HTTP 200 + parseable feed): 18 on 2026-06-16; the Google
+     Cloud Threat Intelligence (ex-Mandiant) feed moved to cloudblog.withgoogle.com
+     and was re-probed 2026-06-19 (okpacks-library#13); 8 added + probed 2026-06-20,
+     weighted toward the publishers most cited in the ATT&CK group bibliography
+     (Secureworks/Volexity/IBM were dropped — their feeds are bot-blocked or moved;
+     okpacks-library#2). Consumed by the engine's
+     generic feed_fetch.py -> raw/ -> the ingest cron compiles into wiki/. Grouped by
+     source TYPE; per-source Admiralty reliability/credibility and TLP are assigned at
+     ingest time (see CLAUDE.md), not by feed.
+     Re-probe before enabling: python3 validate.py with the probe flag. -->
+<opml version="2.0">
+  <head><title>okpack-sec feeds</title></head>
+  <body>
+    <outline text="Government / advisories">
+      <outline text="CISA Cybersecurity Advisories" type="rss" xmlUrl="https://www.cisa.gov/cybersecurity-advisories/all.xml"/>
+      <outline text="NCSC UK" type="rss" xmlUrl="https://www.ncsc.gov.uk/api/1/services/v1/all-rss-feed.xml"/>
+      <outline text="SANS Internet Storm Center" type="rss" xmlUrl="https://isc.sans.edu/rssfeed.xml"/>
+    </outline>
+    <outline text="Vendor research / threat labs">
+      <outline text="Cisco Talos" type="rss" xmlUrl="https://blog.talosintelligence.com/rss/"/>
+      <outline text="Palo Alto Unit 42" type="rss" xmlUrl="https://unit42.paloaltonetworks.com/feed/"/>
+      <outline text="Google Cloud Threat Intelligence (Mandiant)" type="rss" xmlUrl="https://cloudblog.withgoogle.com/topics/threat-intelligence/rss/"/>
+      <outline text="Microsoft Security Blog" type="rss" xmlUrl="https://www.microsoft.com/en-us/security/blog/feed/"/>
+      <outline text="Securelist (Kaspersky)" type="rss" xmlUrl="https://securelist.com/feed/"/>
+      <outline text="Check Point Research" type="rss" xmlUrl="https://research.checkpoint.com/feed/"/>
+      <outline text="CrowdStrike Blog" type="rss" xmlUrl="https://www.crowdstrike.com/blog/feed/"/>
+      <outline text="Recorded Future" type="rss" xmlUrl="https://www.recordedfuture.com/feed"/>
+      <outline text="Rapid7 Blog" type="rss" xmlUrl="https://www.rapid7.com/blog/rss/"/>
+      <outline text="ESET WeLiveSecurity" type="rss" xmlUrl="https://www.welivesecurity.com/en/rss/feed/"/>
+      <outline text="Google Project Zero" type="rss" xmlUrl="https://googleprojectzero.blogspot.com/feeds/posts/default"/>
+      <outline text="Proofpoint" type="rss" xmlUrl="https://www.proofpoint.com/us/rss.xml"/>
+      <outline text="Trend Micro Research" type="rss" xmlUrl="https://feeds.feedburner.com/TrendMicroResearch"/>
+      <outline text="SentinelLabs (SentinelOne)" type="rss" xmlUrl="https://www.sentinelone.com/labs/feed/"/>
+      <outline text="Red Canary" type="rss" xmlUrl="https://redcanary.com/blog/feed/"/>
+      <outline text="Fortinet FortiGuard Labs" type="rss" xmlUrl="https://feeds.fortinet.com/fortinet/blog/threat-research"/>
+    </outline>
+    <outline text="Incident reports / practitioner / news">
+      <outline text="The DFIR Report" type="rss" xmlUrl="https://thedfirreport.com/feed/"/>
+      <outline text="Krebs on Security" type="rss" xmlUrl="https://krebsonsecurity.com/feed/"/>
+      <outline text="Schneier on Security" type="rss" xmlUrl="https://www.schneier.com/feed/atom/"/>
+      <outline text="The Hacker News" type="rss" xmlUrl="https://feeds.feedburner.com/TheHackersNews"/>
+      <outline text="BleepingComputer" type="rss" xmlUrl="https://www.bleepingcomputer.com/feed/"/>
+      <outline text="The Record (Recorded Future News)" type="rss" xmlUrl="https://therecord.media/feed/"/>
+      <outline text="CyberScoop" type="rss" xmlUrl="https://cyberscoop.com/feed/"/>
+      <outline text="SecurityWeek" type="rss" xmlUrl="https://www.securityweek.com/feed/"/>
+    </outline>
+  </body>
+</opml>

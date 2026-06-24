@@ -1,0 +1,53 @@
+{
+  "bundle": {
+    "id": "bundle--1e20ebca-ebc1-5862-9fa4-1cf6363afea3",
+    "objects": [
+      {
+        "created": "2026-01-01T00:00:00.000Z",
+        "id": "infrastructure--9c2f3cfb-af5a-54d0-9bbc-7a54bcda4db4",
+        "infrastructure_types": [
+          "asn"
+        ],
+        "labels": [
+          "bulletproof",
+          "c2-hosting"
+        ],
+        "modified": "2026-01-01T00:00:00.000Z",
+        "name": "Bulletproof host \u2014 AS65535",
+        "spec_version": "2.1",
+        "type": "infrastructure",
+        "x_okfsec_asn": "AS65535",
+        "x_okfsec_cidr": "198.51.100.0/24",
+        "x_okfsec_country": "NL",
+        "x_okfsec_owner": "Offshore Hosting Ltd"
+      },
+      {
+        "created": "2026-01-01T00:00:00.000Z",
+        "id": "relationship--ccd427ab-a40c-5f77-86f8-d055b0b8d3a9",
+        "modified": "2026-01-01T00:00:00.000Z",
+        "relationship_type": "hosts",
+        "source_ref": "infrastructure--9c2f3cfb-af5a-54d0-9bbc-7a54bcda4db4",
+        "spec_version": "2.1",
+        "target_ref": "malware--28abeb24-bb1a-58ab-8792-4387afb20806",
+        "type": "relationship"
+      },
+      {
+        "created": "2026-01-01T00:00:00.000Z",
+        "id": "relationship--46338cdf-25c4-59bf-9d29-3967494241d0",
+        "modified": "2026-01-01T00:00:00.000Z",
+        "relationship_type": "owns",
+        "source_ref": "identity--7febb8c5-daf3-50d1-830c-0c7bf8334bf2",
+        "spec_version": "2.1",
+        "target_ref": "infrastructure--9c2f3cfb-af5a-54d0-9bbc-7a54bcda4db4",
+        "type": "relationship"
+      }
+    ],
+    "type": "bundle"
+  },
+  "loss": [
+    "asn",
+    "cidr",
+    "country",
+    "owner"
+  ]
+}

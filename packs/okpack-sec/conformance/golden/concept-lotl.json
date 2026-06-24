@@ -1,0 +1,32 @@
+{
+  "bundle": {
+    "id": "bundle--fae355f5-96ec-5c45-a74c-451d872e631c",
+    "objects": [
+      {
+        "created": "2026-06-16T00:00:00.000Z",
+        "description": "Adversary use of built-in, signed system tooling to evade detection.",
+        "id": "x-okfsec-concept--a95a0e4c-dea0-5533-86c2-ee0f4b2b8942",
+        "labels": [
+          "lolbin",
+          "evasion"
+        ],
+        "modified": "2026-06-16T00:00:00.000Z",
+        "name": "living-off-the-land",
+        "spec_version": "2.1",
+        "type": "x-okfsec-concept"
+      },
+      {
+        "created": "2026-06-16T00:00:00.000Z",
+        "id": "relationship--9f6971f2-1a27-537d-a561-406340728a5c",
+        "modified": "2026-06-16T00:00:00.000Z",
+        "relationship_type": "related-to",
+        "source_ref": "x-okfsec-concept--a95a0e4c-dea0-5533-86c2-ee0f4b2b8942",
+        "spec_version": "2.1",
+        "target_ref": "attack-pattern--3c05109a-7e2a-5d07-9b01-18e01efa0731",
+        "type": "relationship"
+      }
+    ],
+    "type": "bundle"
+  },
+  "loss": []
+}
