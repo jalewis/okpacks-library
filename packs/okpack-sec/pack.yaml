@@ -1,0 +1,18 @@
+# okpack-sec — pack identity + composition metadata (composable okpacks).
+# validate.py checks this; at deploy the engine validates the whole composed set
+# (disjoint ownership, requires present, single trust level).
+name: okpack-sec
+version: 0.2.4
+trust: public            # the public security reference pack — compose only within one trust level
+owns:
+  # Types + namespaces THIS pack defines and owns (others may read/link them; only the
+  # owner mutates owned fields). Mirrors schema.yaml `types:` + `partitioning.namespaces`.
+  types: [source, vulnerability, attack-pattern, threat-actor, intrusion-set, malware, tool,
+          software, campaign, incident, indicator, infrastructure, identity, course-of-action,
+          detection, concept, finding, prediction, dashboard]
+  namespaces: [entities, sources, concepts, predictions, findings, briefings]
+requires: []             # standalone — depends on no other pack
+port_offset: 200         # reader 9400, mcp 8930 — clears the default 8730/9200 so
+                         # this pack can run alongside another okengine stack on the
+                         # same host. framework pull applies it to the compose host
+                         # ports AND the gateway's read-MCP url so they can't drift.

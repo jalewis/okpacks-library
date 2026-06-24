@@ -1,0 +1,41 @@
+{
+  "bundle": {
+    "id": "bundle--795754ab-a7bf-5ac3-8c4a-a70607bf00f5",
+    "objects": [
+      {
+        "created": "2026-06-16T00:00:00.000Z",
+        "description": "Post-exploitation credential-dumping tool.",
+        "external_references": [
+          {
+            "external_id": "S0002",
+            "source_name": "mitre-attack",
+            "url": "https://attack.mitre.org/software/S0002/"
+          }
+        ],
+        "id": "tool--2596db2b-e4b8-5689-aa01-7346d71ca6dc",
+        "labels": [
+          "credential-access"
+        ],
+        "modified": "2026-06-16T00:00:00.000Z",
+        "name": "Mimikatz",
+        "spec_version": "2.1",
+        "tool_types": [
+          "credential-exploitation"
+        ],
+        "type": "tool"
+      },
+      {
+        "created": "2026-06-16T00:00:00.000Z",
+        "id": "relationship--a5f55b1e-81a8-5216-a4a6-a079a43ac2a8",
+        "modified": "2026-06-16T00:00:00.000Z",
+        "relationship_type": "uses",
+        "source_ref": "threat-actor--3567af9c-ed8e-5f05-8de7-f614e884ca8b",
+        "spec_version": "2.1",
+        "target_ref": "tool--2596db2b-e4b8-5689-aa01-7346d71ca6dc",
+        "type": "relationship"
+      }
+    ],
+    "type": "bundle"
+  },
+  "loss": []
+}

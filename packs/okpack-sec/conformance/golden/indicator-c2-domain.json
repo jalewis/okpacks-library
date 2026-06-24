@@ -1,0 +1,57 @@
+{
+  "bundle": {
+    "id": "bundle--ff15cc50-9a7a-5ba5-808d-d85f67714240",
+    "objects": [
+      {
+        "confidence": 85,
+        "created": "2026-01-01T00:00:00.000Z",
+        "id": "indicator--aa7cdc8b-4f34-58fb-93c6-82a2a79fc296",
+        "labels": [
+          "c2",
+          "apt29"
+        ],
+        "modified": "2026-01-01T00:00:00.000Z",
+        "object_marking_refs": [
+          "marking-definition--f88d31f6-486f-44da-b317-01333bde0b82"
+        ],
+        "pattern": "[domain-name:value = 'cdn-telemetry.example']",
+        "pattern_type": "stix",
+        "spec_version": "2.1",
+        "type": "indicator",
+        "valid_from": "2026-05-02T00:00:00.000Z"
+      },
+      {
+        "created": "2026-01-01T00:00:00.000Z",
+        "id": "relationship--9d6b946a-834a-522f-8a56-c9575226153a",
+        "modified": "2026-01-01T00:00:00.000Z",
+        "relationship_type": "indicates",
+        "source_ref": "indicator--aa7cdc8b-4f34-58fb-93c6-82a2a79fc296",
+        "spec_version": "2.1",
+        "target_ref": "campaign--c7e9bdf5-6c0d-546a-bcf8-0b8713703e90",
+        "type": "relationship"
+      },
+      {
+        "created": "2026-01-01T00:00:00.000Z",
+        "id": "relationship--61d065cf-25ad-5ad8-91b2-5f4518be72e0",
+        "modified": "2026-01-01T00:00:00.000Z",
+        "relationship_type": "resolves-to",
+        "source_ref": "indicator--aa7cdc8b-4f34-58fb-93c6-82a2a79fc296",
+        "spec_version": "2.1",
+        "target_ref": "indicator--75d262eb-cf4a-55ae-8c9b-68ea864fb003",
+        "type": "relationship"
+      },
+      {
+        "created": "2026-01-01T00:00:00.000Z",
+        "id": "relationship--f1c17592-928d-5d10-8de0-0d023ebc94b9",
+        "modified": "2026-01-01T00:00:00.000Z",
+        "relationship_type": "communicates-with",
+        "source_ref": "indicator--aa7cdc8b-4f34-58fb-93c6-82a2a79fc296",
+        "spec_version": "2.1",
+        "target_ref": "infrastructure--c27611d8-6bf6-5e4f-b5f3-753524b76bfa",
+        "type": "relationship"
+      }
+    ],
+    "type": "bundle"
+  },
+  "loss": []
+}

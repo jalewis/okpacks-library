@@ -1,0 +1,39 @@
+{
+  "bundle": {
+    "id": "bundle--95b6ac0d-e117-51a3-a297-a5d77c73932c",
+    "objects": [
+      {
+        "created": "2026-06-16T00:00:00.000Z",
+        "description": "Illustrative financially-motivated ecrime actor.",
+        "first_seen": "2024-01-01T00:00:00.000Z",
+        "id": "threat-actor--ea41c72f-0c31-54b7-83ab-b0b6d0c820e8",
+        "labels": [
+          "ecrime",
+          "ransomware"
+        ],
+        "modified": "2026-06-16T00:00:00.000Z",
+        "name": "Acme Ransom Crew (example)",
+        "primary_motivation": "personal-gain",
+        "resource_level": "team",
+        "sophistication": "intermediate",
+        "spec_version": "2.1",
+        "threat_actor_types": [
+          "criminal"
+        ],
+        "type": "threat-actor"
+      },
+      {
+        "created": "2026-06-16T00:00:00.000Z",
+        "id": "relationship--abb43b85-b594-5d3f-9a26-9399b071d3e2",
+        "modified": "2026-06-16T00:00:00.000Z",
+        "relationship_type": "uses",
+        "source_ref": "threat-actor--ea41c72f-0c31-54b7-83ab-b0b6d0c820e8",
+        "spec_version": "2.1",
+        "target_ref": "malware--28abeb24-bb1a-58ab-8792-4387afb20806",
+        "type": "relationship"
+      }
+    ],
+    "type": "bundle"
+  },
+  "loss": []
+}

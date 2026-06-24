@@ -1,0 +1,39 @@
+{
+  "bundle": {
+    "id": "bundle--b061f955-f416-5dca-8846-5c1732845365",
+    "objects": [
+      {
+        "created": "2026-01-01T00:00:00.000Z",
+        "id": "report--951d7ebe-4781-5db0-8d0e-e23dc7357ed9",
+        "labels": [
+          "apt29",
+          "supply-chain",
+          "russia"
+        ],
+        "modified": "2026-01-01T00:00:00.000Z",
+        "name": "Mandiant \u2014 APT29 supply-chain update (2026-06-10)",
+        "object_marking_refs": [
+          "marking-definition--613f2e26-407d-48c7-9eca-b8e91df99dc9"
+        ],
+        "object_refs": [
+          "threat-actor--3567af9c-ed8e-5f05-8de7-f614e884ca8b",
+          "campaign--c7e9bdf5-6c0d-546a-bcf8-0b8713703e90"
+        ],
+        "published": "2026-06-10T00:00:00.000Z",
+        "spec_version": "2.1",
+        "type": "report",
+        "x_okfsec_bias_flags": [
+          "vendor-commercial"
+        ],
+        "x_okfsec_credibility": 2,
+        "x_okfsec_reliability": "A"
+      }
+    ],
+    "type": "bundle"
+  },
+  "loss": [
+    "bias_flags",
+    "credibility",
+    "reliability"
+  ]
+}
