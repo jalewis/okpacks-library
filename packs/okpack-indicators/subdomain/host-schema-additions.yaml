@@ -1,0 +1,13 @@
+# okpack-indicators co-install — host-schema ADDITIONS (taxonomy-augmenting shape; docs/authoring-a-pack.md §8).
+# Single-source rule: a SUBSET of the standalone schema.yaml (`indicator` + `infrastructure`). Host wins on
+# collision. These are the observable-layer types the pack mints; they wikilink the host's actor/malware world.
+types:
+  indicator:
+    required: [type]
+  infrastructure:
+    required: [type]
+# legacy/STIX-ish name resolution carried into the composed host (okengine#181):
+# a page authored `type: ioc` drains to `indicator`, `type: host` to `infrastructure`.
+type_aliases:
+  ioc: indicator
+  host: infrastructure

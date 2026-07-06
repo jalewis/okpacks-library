@@ -1,0 +1,21 @@
+# okpack-incidents co-install — host-schema ADDITIONS (taxonomy-augmenting shape; docs/authoring-a-pack.md §8).
+# Single-source rule: a SUBSET of the standalone schema.yaml (`incident` + `identity`). Host wins on
+# collision. These are the event-layer types the pack mints; incidents wikilink the host's actor/cve world.
+types:
+  incident:
+    required: [type]
+    id_authority: incident
+    id_field: incident_id
+  identity:
+    required: [type]
+# legacy/STIX identity names resolve to `identity` in the composed host (okengine#181); breach/event -> incident.
+type_aliases:
+  organization: identity
+  company: identity
+  person: identity
+  agency: identity
+  government-agency: identity
+  government-entity: identity
+  team: identity
+  breach: incident
+  event: incident

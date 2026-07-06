@@ -1,0 +1,18 @@
+# Sample watchlist: ENERGY DRINKS — framed for a NEW ENTRANT planning a brand.
+# Copy to config/competitive-watchlist.yaml; set `home:` to YOUR brand's entity slug once you
+# name it — discover-competitors then orbits co-occurrence around YOUR position.
+home: my-energy-brand
+segments:
+  incumbents:
+    label: "Incumbent majors (the shelf you're fighting for)"
+    competitors: [red-bull, monster-beverage, rockstar-energy]
+    axes: {x: "distribution lock-in", y: "brand age vs momentum"}
+  challengers:
+    label: "Challenger / better-for-you wave (your direct cohort)"
+    competitors: [celsius, alani-nu, ghost-energy, c4-energy]
+    axes: {x: "functional/wellness positioning", y: "channel velocity"}
+  adjacent-threats:
+    label: "Adjacent entrants (brand-first line extensions)"
+    competitors: [prime-energy, zoa-energy]
+    axes: {x: "celebrity/brand leverage", y: "staying power"}
+watch_signals: [pricing, launch, funding, hire, partnership, acquisition]

@@ -1,0 +1,4 @@
+# Runtime dependencies — the pack validators (packs/*/validate.py) and the no_agent
+# importers (packs/*/crons/scripts/*.py) parse/emit YAML. Install with:
+#   pip install -r requirements.txt
+PyYAML>=6

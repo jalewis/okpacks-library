@@ -1,0 +1,185 @@
+[
+  {
+    "id": "8b3ee2068554",
+    "name": "okpack-threat-actors-feed-fetch",
+    "enabled": true,
+    "_note": "Enabled by default but HARMLESS until you populate feeds.opml: feed-fetch runs on schedule and makes ZERO upstream calls while the feed list is empty (it logs a clean 'no feeds' no-op). Populate feeds/feeds.opml to start ingesting. The `@jitter:2h` schedule is expanded to a concrete cron with a RANDOM minute at install (framework init/pull), so installs don't synchronize once feeds are live.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:2h"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "okpack-threat-actors feed pull: fetch the threat-actors OPML into raw/threat-actors/ for the ingest lane. Pure script, wakeAgent=false.",
+    "script": "/opt/data/scripts/okpack_threat_actors_feed_fetch.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "a71c04d9e2b3",
+    "name": "okpack-threat-actors-attack-import",
+    "enabled": true,
+    "_note": "THE graph seed. Pulls MITRE ATT&CK (Enterprise+Mobile+ICS STIX) into actor/campaign/malware/tool/technique + mitigation pages with alias arrays + relationship links. no_agent, ZERO LLM tokens. MERGE-writes, so it never clobbers attribution_confidence/related_actors from the enrich+correlation lanes. Weekly is ample (ATT&CK releases ~quarterly).",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Seed the adversary graph from MITRE ATT&CK (Enterprise+Mobile+ICS). Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/attack_import.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "c92f18a7d6e4",
+    "name": "okpack-threat-actors-misp-import",
+    "enabled": true,
+    "_note": "The alias engine. Unions the MISP threat-actor galaxy's synonyms onto the ATT&CK-seeded actors (matching by name/alias) and creates low-trust pages for galaxy actors ATT&CK misses. Runs after attack-import so it enriches. no_agent, ZERO LLM tokens.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Enrich actor aliases from the MISP threat-actor galaxy. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/misp_galaxy_import.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "e4b7d2f1a908",
+    "name": "okpack-threat-actors-correlation",
+    "enabled": true,
+    "_note": "Rarity-weighted (idf) actor<->actor correlation from shared techniques/software/sectors — shared Cobalt Strike ~= 0, shared rare custom malware = strong. Writes low-trust related_actors leads (needs_review). Reads the structured frontmatter attack_import stamps, so it wants the imports to have run at least once. no_agent, ZERO LLM tokens.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Correlate actors by rarity-weighted shared tradecraft. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/actor_correlation.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "a8d4e1c7b2f9",
+    "name": "okpack-threat-actors-signature-ttps",
+    "enabled": true,
+    "_note": "Per-actor SIGNATURE techniques — the rarest (high-idf) TTPs few other actors use (the detection-engineering distinctive set), + a distinctiveness_score. Inverse of correlation. Reads the structured frontmatter attack_import stamps. no_agent, ZERO LLM tokens.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Profile each actor's signature (rarest) techniques. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/signature_ttps.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "c1f6b3a08e7d",
+    "name": "okpack-threat-actors-shared-tooling",
+    "enabled": true,
+    "_note": "Classifies malware/tools proprietary vs shared vs commodity by how many actors use them, and links actors that share PROPRIETARY tooling (a strong same-group / RaaS-affiliate disambiguation signal — commodity/RaaS tooling is discounted). no_agent, ZERO LLM tokens.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Classify shared tooling + link actors sharing proprietary malware. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/shared_tooling.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "d3b9a1f7e2c8",
+    "name": "okpack-threat-actors-aptnotes-seed",
+    "enabled": true,
+    "_note": "HISTORICAL seed: ~689 public vendor APT reports (2006+) from the APTnotes index as source pages, with titles matched to actor aliases -> [[actor]] links. no_agent, ZERO LLM tokens, idempotent. APTnotes is a mostly-static corpus, so this seeds once and re-runs are cheap no-ops — safe to disable after the first run.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Seed historical APT reports from the APTnotes index. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/aptnotes_import.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "e7c2a9b4d1f6",
+    "name": "okpack-threat-actors-annual-reports",
+    "enabled": true,
+    "_note": "Full-TEXT ingest of annual security reports (awesome-annual-security-reports, MIT). THREAT categories only (keyword allowlist). Default: fetch from the PUBLIC GitHub repo, bounded (recent years + cap 80). Operator override: set ANNUAL_REPORTS_DIR in .env to a local checkout (faster/offline). Widen via ANNUAL_REPORTS_YEARS / _LIMIT. no_agent for the import (zero-token; actor-linking too) — but these are large SOURCE pages, so the entity/trend/concept AGENT lanes spend when they compile them. See docs/data-sources.md.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Ingest annual threat reports (full text) from the awesome-annual-security-reports corpus. Pure script, wakeAgent=false, ZERO LLM tokens for the import.",
+    "script": "/opt/data/scripts/annual_reports_import.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "b6d2f9a1c3e8",
+    "name": "okpack-threat-actors-actor-activity",
+    "enabled": true,
+    "_note": "Generated dashboard: top actors by RECENT activity (mentions in recent reporting). no_agent, ZERO LLM tokens. Reads source mentions_actors+published stamped by the ingest lanes.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Rank actors by recent reporting activity into a dashboard. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/actor_activity.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "a4e8c1b7d3f2",
+    "name": "okpack-threat-actors-cti-dashboards",
+    "enabled": true,
+    "_note": "Generated CTI research dashboards (actors-by-sector, ATT&CK tactic-coverage, top exploited-CVEs, most-used tooling). no_agent, ZERO LLM tokens.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Generate CTI research dashboards. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/cti_dashboards.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "f5a3c1e8b7d2",
+    "name": "okpack-threat-actors-weekly-brief",
+    "enabled": true,
+    "_note": "Agent lane. Synthesizes the week's threat brief from the last 7 days. Spends model tokens (compile budget). Writes briefings/weekly-<date>.md (weekly- prefix keeps it distinct from the engine daily-brief's daily-<date>).",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "enabled_toolsets": [
+      "hermes-cron",
+      "okengine-write",
+      "okengine"
+    ],
+    "prompt": "Weekly threat-actor brief. Your FIRST response MUST be a tool call: file_read on wiki/HOT.md (recent sources, recently-updated actors/malware, open forecasts). Scope to the LAST 7 DAYS only — ignore older HOT.md entries. Then write the brief via mcp_okengine_write_create_entity (the enforced write path — never file_write) to path \"briefings/weekly-<YYYY-MM-DD>.md\" (frontmatter: type: briefing, title, published: <YYYY-MM-DD>, updated: <YYYY-MM-DD> — use TODAY's actual date, not a guessed or future one, for the filename and both date fields) covering the 4-6 most significant developments of the week — active campaigns, notable new/updated actors, TTP shifts, credible attribution moves, active malware — each 2-3 sentences with [[wikilinks]] to the entities + their source. Note any open forecast that moved, and any newly correlated actors worth an analyst's eye. Treat vendor attribution as a CLAIM, not fact. Expert-grade and terse; skip 101 explanation. LOCAL-ONLY: do not use web tools.",
+    "deliver": "local"
+  },
+  {
+    "id": "a3d90f27b6e1",
+    "name": "okpack-threat-actors-msft-import",
+    "enabled": true,
+    "_note": "The cross-vendor ALIAS BACKBONE. Unions Microsoft's weather-suffix actor names + their 'Other names' (github.com/microsoft/mstic, MIT) onto the ATT&CK/MISP-seeded actor pages so a feed mention under any vendor's naming resolves to one canonical actor. Runs AFTER attack_import + misp_galaxy_import (enrich, not race). no_agent, ZERO LLM tokens, MERGE-safe. The mapping changes infrequently -> weekly.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Enrich actor aliases from the Microsoft threat-actor naming map. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/msft_import.py",
+    "deliver": "local",
+    "no_agent": true
+  }
+]
