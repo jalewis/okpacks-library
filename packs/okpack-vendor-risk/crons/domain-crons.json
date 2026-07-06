@@ -1,0 +1,17 @@
+[
+  {
+    "id": "821d4fe7cc39",
+    "name": "okpack-vendor-risk-feed-fetch",
+    "enabled": true,
+    "_note": "Enabled by default but HARMLESS until you populate feeds.opml: feed-fetch runs on schedule and makes ZERO upstream calls while the feed list is empty (it logs a clean 'no feeds' no-op). Populate feeds/feeds.opml to start ingesting. The `@jitter:2h` schedule is expanded to a concrete cron with a RANDOM minute at install (framework init/pull), so installs don't synchronize once feeds are live.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "48 */2 * * *"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "okpack-vendor-risk feed pull: fetch the vendor-risk OPML into raw/vendor-risk/ for the ingest lane. Pure script, wakeAgent=false.",
+    "script": "/opt/data/scripts/okpack_vendor_risk_feed_fetch.py",
+    "deliver": "local",
+    "no_agent": true
+  }
+]

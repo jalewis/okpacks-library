@@ -1,0 +1,16 @@
+[
+  {
+    "id": "de3732a722fa",
+    "name": "okpack-example-feed-fetch",
+    "enabled": true,
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:2h"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "okpack-example feed pull: fetch the example OPML into raw/example/ for the ingest lane. Pure script, wakeAgent=false.",
+    "script": "/opt/data/scripts/okpack_example_feed_fetch.py",
+    "deliver": "local",
+    "no_agent": true
+  }
+]

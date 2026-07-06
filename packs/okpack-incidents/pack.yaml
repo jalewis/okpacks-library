@@ -1,0 +1,24 @@
+# okpack-incidents — pack identity + composition metadata (composable okpacks).
+# `validate.py` checks this; at deploy the engine validates the whole composed
+# set (disjoint ownership, requires present, single trust level).
+name: okpack-incidents
+version: 0.1.0
+description: "Security incidents + the identities they involve — the event layer of a CTI vault"
+mission: >-
+  Tracks security `incident` events (breaches, intrusions, data-loss events) and the `identity`
+  parties they involve (victim organizations, agencies, persons), seeded from the open VERIS Community
+  Database. The event layer that binds actors, techniques, and indicators to real-world outcomes — so a
+  reader can answer "who was hit, by what, and how" and pivot from an incident to the adversary and the
+  observables, from the vault instead of a spreadsheet of breach reports.
+trust: public             # public | private — compose only within one trust level
+owns:
+  # DOMAIN types this pack defines + owns. The OKF core + its namespaces are ENGINE-owned & inherited.
+  # Disjoint from the other CTI packs (actor/campaign/malware/tool/technique/cve/indicator/detection/…)
+  # → clean composition. `identity` is the broad party registry (victim orgs/agencies/persons); it is
+  # NOT `publisher` (report authors, owned by okpack-threat-landscape) nor `vendor`.
+  types: [incident, identity]
+  # `security-incidents` is the pack-owned event tree (date-bucketed); `identity` lives in shared entities/.
+  # dashboards/operational are shared/generated (NOT owned here — co-owning them blocks composition).
+  namespaces: [security-incidents]
+requires: []              # standalone; composes ALONGSIDE the other CTI packs (okpack-sec bundle).
+port_offset: 260          # reader 9460, mcp 8990 (runs alongside other local stacks)

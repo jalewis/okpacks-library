@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Sample market: PHARMA / biopharma. Trade press (all high-volume dailies).
+     All URLs verified live 2026-07-01. -->
+<opml version="2.0">
+  <head><title>pharma market — sample feeds</title></head>
+  <body>
+    <outline text="Fierce Pharma"            type="rss" xmlUrl="https://www.fiercepharma.com/rss/xml"/>
+    <outline text="Fierce Biotech"           type="rss" xmlUrl="https://www.fiercebiotech.com/rss/xml"/>
+    <outline text="BioPharma Dive"           type="rss" xmlUrl="https://www.biopharmadive.com/feeds/news/"/>
+    <outline text="PharmaVoice"              type="rss" xmlUrl="https://www.pharmavoice.com/feeds/news/"/>
+    <outline text="STAT News"                type="rss" xmlUrl="https://www.statnews.com/feed/"/>
+    <outline text="Pharmaceutical Technology" type="rss" xmlUrl="https://www.pharmaceutical-technology.com/feed/"/>
+  </body>
+</opml>

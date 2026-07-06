@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Sample market: DEVELOPER TOOLS (SCM/CI, IDEs, app platforms).
+     All URLs verified live 2026-07-01. -->
+<opml version="2.0">
+  <head><title>developer-tools market — sample feeds</title></head>
+  <body>
+    <outline text="GitHub blog"    type="rss"  xmlUrl="https://github.blog/feed/"/>
+    <outline text="GitLab blog"    type="atom" xmlUrl="https://about.gitlab.com/atom.xml"/>
+    <outline text="JetBrains blog" type="rss"  xmlUrl="https://blog.jetbrains.com/feed/"/>
+    <outline text="HashiCorp blog" type="rss"  xmlUrl="https://www.hashicorp.com/blog/feed.xml"/>
+    <outline text="Vercel changelog" type="atom" xmlUrl="https://vercel.com/atom"/>
+    <outline text="Replit blog"    type="rss"  xmlUrl="https://blog.replit.com/feed.xml"/>
+  </body>
+</opml>

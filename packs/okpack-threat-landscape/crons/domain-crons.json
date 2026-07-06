@@ -1,0 +1,76 @@
+[
+  {
+    "id": "f2a9c1e7b4d3",
+    "name": "okpack-threat-landscape-annual-reports",
+    "enabled": true,
+    "_note": "THE seed. Full-TEXT ingest of ALL categories of the awesome-annual-security-reports corpus (MIT) -> source pages stamped with an inferred report_theme + vendor. Default: fetch from PUBLIC GitHub, bounded (recent years + cap 120). Operator override: set ANNUAL_REPORTS_DIR in .env to a local checkout. no_agent for the import (zero-token) — large source pages, so the trend/metric AGENT lanes spend when compiling. See docs/data-sources.md.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Ingest annual security reports (all categories, full text, themed). Pure script, wakeAgent=false, ZERO LLM tokens for the import.",
+    "script": "/opt/data/scripts/landscape_reports_import.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "a3d7f2b9e1c6",
+    "name": "okpack-threat-landscape-theme-trends",
+    "enabled": true,
+    "_note": "Cross-report THEME emergence: counts reports per report_theme per year -> rising/fading trend pages (the landscape analog of TTP-diffusion). Reads the report_theme+year frontmatter the ingest stamps. no_agent, ZERO LLM tokens.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Synthesize theme-emergence trends across the report corpus. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/theme_trends.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "b8e4c2a1f7d9",
+    "name": "okpack-threat-landscape-vendor-index",
+    "enabled": true,
+    "_note": "Builds a publisher page per report publisher (report count, themes, years, links) — the who-says-what-about-what map. no_agent, ZERO LLM tokens.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Build the publisher coverage map from the report corpus. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/vendor_index.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "c5f1a8d3b2e7",
+    "name": "okpack-threat-landscape-feed-fetch",
+    "enabled": true,
+    "_note": "Optional ongoing signal (empty by default; ZERO upstream calls until you populate feeds.opml). The annual reports are the primary source. @jitter:2h expanded to a random minute at install.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:2h"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "okpack-threat-landscape feed pull: fetch the threat-landscape OPML into raw/threat-landscape/ for the ingest lane. Pure script, wakeAgent=false.",
+    "script": "/opt/data/scripts/okpack_threat_landscape_feed_fetch.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "d9b2e5c8a3f4",
+    "name": "okpack-threat-landscape-weekly-brief",
+    "enabled": true,
+    "_note": "Agent lane. Synthesizes the week's landscape brief from recent trends + reports. Spends model tokens. Writes briefings/weekly-<date>.md.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "enabled_toolsets": ["hermes-cron", "okengine-write", "okengine"],
+    "prompt": "Weekly threat-landscape brief. Your FIRST response MUST be a tool call: file_read on wiki/HOT.md (recent landscape shifts, recent reports, recently-updated metrics). Then write the brief via mcp_okengine_write_create_entity (the enforced write path — never file_write) to path \"briefings/weekly-<YYYY-MM-DD>.md\" (frontmatter: type: briefing, title, published: <YYYY-MM-DD>, updated: <YYYY-MM-DD> — use TODAY's actual date, not a guessed or future one) covering what MOVED in the landscape this week — themes rising/fading across vendor reports, notable metric convergence or disagreement between vendors, new reports of note — each 2-3 sentences with [[wikilinks]] to the trends/metrics/vendors + their source. Where vendors DISAGREE on a metric, say so (the range IS the finding). Expert-grade and terse; skip 101 explanation. LOCAL-ONLY: do not use web tools.",
+    "deliver": "local"
+  }
+]
