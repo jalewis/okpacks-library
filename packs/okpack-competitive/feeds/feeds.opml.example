@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- okpack-competitive ships METHOD-ONLY: no feed list, because YOUR tracked market defines it.
+     How to pick feeds (add to feeds.opml, not this file):
+       1. Your market's trade press RSS (the 2-3 outlets that break vendor news first).
+       2. Each tracked competitor's newsroom/blog RSS (press releases beat re-reporting).
+       3. A funding/deals tracker for the segment (M&A + rounds are core `deal` signal).
+       4. Regulator / standards-body feeds if your market is compliance-driven.
+     Start with 5-10 feeds; more feeds = more noise for the ingest agent to filter. -->
+<opml version="2.0">
+  <head><title>okpack-competitive — pick feeds for YOUR market (see comment above)</title></head>
+  <body>
+    <!-- <outline type="rss" text="Example trade press" xmlUrl="https://example.com/feed.xml"/> -->
+  </body>
+</opml>

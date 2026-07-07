@@ -1,0 +1,17 @@
+# okpack-detections co-install — host-schema ADDITIONS (taxonomy-augmenting shape; docs/authoring-a-pack.md §8).
+# Single-source rule: a SUBSET of the standalone schema.yaml (`detection` + `course-of-action`). Host wins
+# on collision. These are the defensive-layer types the pack mints; detections wikilink the host's techniques.
+types:
+  detection:
+    required: [type]
+  course-of-action:
+    required: [type]
+    id_authority: attack
+    id_field: attack_id
+# legacy/STIX name resolution carried into the composed host (okengine#181):
+# `type: mitigation` drains to `course-of-action`; `type: rule|sigma|yara` to `detection`.
+type_aliases:
+  mitigation: course-of-action
+  rule: detection
+  sigma: detection
+  yara: detection

@@ -1,0 +1,23 @@
+# okpack-detections — pack identity + composition metadata (composable okpacks).
+# `validate.py` checks this; at deploy the engine validates the whole composed
+# set (disjoint ownership, requires present, single trust level).
+name: okpack-detections
+version: 0.1.0
+description: "Detections (Sigma/YARA) + ATT&CK mitigations — the defensive-response layer of a CTI vault"
+mission: >-
+  Tracks the defensive layer: `detection` rules (Sigma/YARA/EQL — what you watch for) seeded from the
+  open SigmaHQ ruleset, and `course-of-action` mitigations (MITRE ATT&CK M####) — what you do about a
+  threat. Each detection cross-links the ATT&CK technique(s) it covers ([[technique]], resolving to a
+  composed actor pack), so a reader can answer "which techniques do we detect, and where are the gaps"
+  from the vault instead of grepping a rules repo.
+trust: public             # public | private — compose only within one trust level
+owns:
+  # DOMAIN types this pack defines + owns. The OKF core + its namespaces are ENGINE-owned & inherited.
+  # Disjoint from the other CTI packs (actor/campaign/malware/tool/technique/cve/indicator/…) → clean
+  # composition. `detection` + `course-of-action` are the "defend" twins (ATT&CK groups them likewise).
+  types: [detection, course-of-action]
+  # `detections` is the pack-owned rules tree; `course-of-action` (mitigations) live in shared entities/.
+  # dashboards/operational are shared/generated (NOT owned here — co-owning them blocks composition).
+  namespaces: [detections]
+requires: []              # standalone; composes ALONGSIDE the other CTI packs (okpack-sec bundle).
+port_offset: 250          # reader 9450, mcp 8980 (runs alongside other local stacks)

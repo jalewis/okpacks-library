@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Sample market: FOOD & BEVERAGE CPG. All URLs verified live 2026-07-01. -->
+<opml version="2.0">
+  <head><title>food and beverage market — sample feeds</title></head>
+  <body>
+    <outline text="Food Dive"          type="rss" xmlUrl="https://www.fooddive.com/feeds/news/"/>
+    <outline text="BevNET"             type="rss" xmlUrl="https://www.bevnet.com/feed/"/>
+    <outline text="Food Business News" type="rss" xmlUrl="https://www.foodbusinessnews.net/rss/topic/84"/>
+  </body>
+</opml>
