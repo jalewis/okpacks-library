@@ -1,0 +1,11 @@
+# Sample watchlist: DATA INFRASTRUCTURE. Copy to config/competitive-watchlist.yaml and edit.
+segments:
+  analytics-platforms:
+    label: "Cloud analytics / lakehouse platforms"
+    competitors: [snowflake, databricks, clickhouse]
+    axes: {x: "open-format alignment", y: "compute price-performance"}
+  operational-databases:
+    label: "Operational / serverless databases"
+    competitors: [mongodb, neon]
+    axes: {x: "developer experience", y: "scale ceiling"}
+watch_signals: [pricing, launch, funding, hire, partnership, acquisition]

@@ -1,0 +1,102 @@
+# docker-compose for the AI / LLM Research Watch domain pack (engine release: see engine.version).
+# The pack dir IS the vault (schema.yaml + CLAUDE.md + wiki/ + crons/feeds/data).
+# Set ENGINE_DIR to your engine checkout, then:
+#   export HERMES_UID=10000 HERMES_GID=10000        # see Resolved note #17
+#   bash $ENGINE_DIR/scripts/build-engine-image.sh  # builds the gateway image (hermes-agent)
+#   ENGINE_DIR=$ENGINE_DIR docker compose up -d      # builds reader+mcp, runs all three
+#   CRON_PACK_DIR=$(pwd) bash $ENGINE_DIR/scripts/deploy-cron-scripts.sh
+#   CRON_PACK_DIR=$(pwd) bash $ENGINE_DIR/scripts/deploy-cron-plus-jobs.sh
+# Ports are offset by 100 (reader 9300 / mcp 8830) to avoid colliding with other
+# local stacks on this host. Declared durably as port_offset in pack.yaml so
+# `framework pull` lands here with no flag.
+services:
+  gateway:
+    # gateway image = pinned Hermes + patches + engine overlay; build it ONCE
+    # with scripts/build-engine-image.sh (OKEngine has no root Dockerfile).
+    image: hermes-agent
+    container_name: okpack-ai-research-gateway
+    restart: unless-stopped
+    # On the per-pack bridge (okengine#138): reaches okengine-mcp by service name.
+    # NO `user:` here — the gateway is an s6-overlay image that must start as
+    # root and remap internally via HERMES_UID/HERMES_GID (passed below). Pinning
+    # `user:` to a non-10000 uid makes s6 abort on startup (okpacks-library#12).
+    volumes:
+      - ./.hermes-data:/opt/data
+      - ./:/opt/vault
+    # Pass .env into the agent runtime: model-provider keys (OPENROUTER_API_KEY,
+    # DEEPSEEK_API_KEY, …) and delivery tokens are read from the environment by
+    # Hermes. required:false so `docker compose config` in pack CI (no .env) and a
+    # not-yet-configured checkout don't hard-fail.
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - HERMES_UID=${HERMES_UID:-10000}
+      - HERMES_GID=${HERMES_GID:-10000}
+      # Explicit vault path — the base image ships WIKI_PATH blank, which would
+      # otherwise leave the gateway's write_server resolving a relative wiki/
+      # (okengine#34).
+      - WIKI_PATH=/opt/vault
+      - HERMES_WRITE_SAFE_ROOT=/opt
+    command: ["gateway", "run"]
+    deploy:
+      restart_policy: {condition: on-failure, delay: 10s, max_attempts: 5, window: 120s}
+      resources: {limits: {cpus: "2.0", memory: 3072M}}
+  okengine-reader:
+    build: ${ENGINE_DIR:-../engine}/okengine-reader
+    image: okengine-reader
+    container_name: okpack-ai-research-reader
+    user: "${HERMES_UID:-10000}:${HERMES_GID:-10000}"
+    restart: unless-stopped
+    # Local-first: host port binds loopback by default. To expose on the LAN,
+    # set OKENGINE_BIND=0.0.0.0 in .env (and set OKENGINE_READER_PASSWORD).
+    ports: ["${OKENGINE_BIND:-127.0.0.1}:9300:9200"]
+    environment:
+      - OKENGINE_READER_PASSWORD=${OKENGINE_READER_PASSWORD:-}
+      # private-vault fail-safe (okengine#90 P4a)
+      - OKENGINE_TRUST=${OKENGINE_TRUST:-private}
+      - OKENGINE_BIND=${OKENGINE_BIND:-127.0.0.1}
+    volumes: ["./:/vault:ro"]
+    # TCP-connect probe via python3 (present in the python:3.13-slim reader/mcp images).
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import socket,sys; s=socket.socket(); s.settimeout(2); sys.exit(s.connect_ex(('127.0.0.1',9200)))\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      restart_policy: {condition: on-failure, delay: 10s, max_attempts: 5, window: 120s}
+      resources: {limits: {cpus: "4.0", memory: 3584M}}
+  okengine-mcp:
+    build:
+      context: ${ENGINE_DIR:-../engine}
+      dockerfile: okengine-mcp/Dockerfile
+    image: okengine-mcp
+    container_name: okpack-ai-research-mcp
+    user: "${HERMES_UID:-10000}:${HERMES_GID:-10000}"
+    restart: unless-stopped
+    # Local-first: host port binds loopback by default. To expose on the LAN,
+    # set OKENGINE_BIND=0.0.0.0 in .env AND a real OKENGINE_MCP_TOKEN.
+    # bridge (okengine#138): gateway reaches okengine-mcp:8730 by service name — no host
+    # port needed; uncomment ONLY to expose the read surface to external agents.
+    # ports: ["${OKENGINE_BIND:-127.0.0.1}:8830:8730"]
+    environment:
+      - WIKI_PATH=/opt/vault
+      - OKENGINE_MCP_TRANSPORT=streamable-http
+      - PORT=8730
+      # Default token ships configured so a fresh deploy authenticates out of the
+      # box; safe because the host port is loopback-only above. CHANGE before exposing.
+      - OKENGINE_MCP_TOKEN=${OKENGINE_MCP_TOKEN:-}
+    volumes:
+      - ./:/opt/vault:ro
+      - ./.hermes-data/qmd:/opt/data/qmd
+    # TCP-connect probe via python3 (present in the python:3.13-slim reader/mcp images).
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import socket,sys; s=socket.socket(); s.settimeout(2); sys.exit(s.connect_ex(('127.0.0.1',8730)))\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      restart_policy: {condition: on-failure, delay: 10s, max_attempts: 5, window: 120s}
+      resources: {limits: {cpus: "2.0", memory: 2560M}}

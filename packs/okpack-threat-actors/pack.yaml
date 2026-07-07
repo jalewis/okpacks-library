@@ -1,0 +1,25 @@
+# okpack-threat-actors — pack identity + composition metadata (composable okpacks).
+# `validate.py` checks this; at deploy the engine validates the whole composed
+# set (disjoint ownership, requires present, single trust level).
+name: okpack-threat-actors
+version: 0.1.0
+description: "Threat-actor / adversary tracking from open-source threat intelligence"
+mission: >-
+  Tracks threat actors, their campaigns, malware, tools and MITRE ATT&CK techniques from
+  open-source threat intelligence (ATT&CK, the MISP threat-actor galaxy, public CERT/vendor
+  reporting) —
+  reconciling the alias chaos (APT29 = Cozy Bear = Midnight Blizzard) into ONE canonical
+  adversary graph, then surfacing actor correlations and coverage gaps a reader can follow
+  from the vault instead of a hundred vendor blogs.
+trust: public             # public | private — compose only within one trust level
+owns:
+  # Types this pack DEFINES + OWNS. The OKF core (source/concept/prediction/finding/briefing/
+  # trend/dashboard + the entities/sources/concepts/predictions/findings/briefings/trends
+  # namespaces) is ENGINE-owned and inherited — never redeclared here.
+  types: [actor, campaign, malware, tool, technique]
+  # `techniques` is a pack-owned namespace (the ATT&CK matrix tree, kept out of entities/ for
+  # legibility). `dashboards`/`operational` are generated/EXCLUDED (schema.yaml) + shared across packs,
+  # so they're NOT listed here (co-owning them blocks composition). briefings/trends/findings are engine-core.
+  namespaces: [techniques]
+requires: []              # standalone; composes ALONGSIDE a vuln pack (owns cve) or a market pack.
+port_offset: 230          # reader 9430, mcp 8960 (runs alongside other local stacks)

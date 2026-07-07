@@ -1,0 +1,32 @@
+[
+  {
+    "id": "9f483db94b73",
+    "name": "okpack-indicators-feed-fetch",
+    "enabled": true,
+    "_note": "Enabled by default but HARMLESS until you populate feeds.opml: feed-fetch runs on schedule and makes ZERO upstream calls while the feed list is empty (it logs a clean 'no feeds' no-op). Populate feeds/feeds.opml to start ingesting. The `@jitter:2h` schedule is expanded to a concrete cron with a RANDOM minute at install (framework init/pull), so installs don't synchronize once feeds are live.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "26 */2 * * *"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "okpack-indicators feed pull: fetch the indicators OPML into raw/indicators/ for the ingest lane. Pure script, wakeAgent=false.",
+    "script": "/opt/data/scripts/okpack_indicators_feed_fetch.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "d41a9c6b02fe",
+    "name": "okpack-indicators-urlhaus-import",
+    "enabled": true,
+    "_note": "THE seed. Pulls the abuse.ch URLhaus recent-URLs feed (CC0) into indicators/ — one indicator page per malicious URL, plus an infrastructure page per distinct host. BOUNDED (recent feed, URLHAUS_LIMIT default 500). no_agent, ZERO LLM tokens, MERGE-safe. URLhaus updates continuously; hourly/daily are both reasonable.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:daily"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Seed malicious-URL indicators from abuse.ch URLhaus. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/urlhaus_import.py",
+    "deliver": "local",
+    "no_agent": true
+  }
+]
