@@ -1,0 +1,85 @@
+# OKF domain contract for: okpack-vuln — Actively-exploited vulnerability (CVE) tracking.
+# The engine reads this (never hardcodes layout) — types + partitioning + hot_set.
+version: 1
+apply_under: [wiki/]
+
+exclude:
+  - wiki/operational/
+  - wiki/dashboards/
+  - wiki/examples/
+
+okf:
+  required: [type]            # OKF v0.1 base: every page needs a type
+  should:   [id]              # every page SHOULD carry a stable `id`
+common_optional: [id, title, description, tags, created, updated, related, sources, tlp, confidence,
+                  aliases, cve_id, cvss_score, cvss_base, cvss_version, severity, cwe, vendor,
+                  product, date_added, due_date]
+
+# How each namespace buckets on disk. `cves` is the pack-owned tree (KEV is ~1200 CVEs; year-bucketed).
+partitioning:
+  reshard_over: 500
+  namespaces:
+    cves:        {strategy: by-date, date_field: date_added, reshard_by: year}
+    sources:     {strategy: by-date, date_field: published, reshard_by: day}
+    concepts:    {strategy: by-letter, reshard_by: second-letter}
+    predictions: {strategy: flat}
+    briefings:   {strategy: flat}
+    trends:      {strategy: flat}
+
+# The agent's load-first working set (build_hot_set -> wiki/HOT.md).
+hot_set:
+  days: 30
+  cap: 300
+  sections:
+    - {kind: recent, namespace: cves, date_field: date_added, layout: by-date, title: "Newly-exploited CVEs"}
+    - {kind: recent, namespace: sources, date_field: published, layout: by-date, title: "Recent advisories"}
+
+# Write-permission matrix (conformance G2) — enforced by the MCP write path.
+permissions:
+  default: {create: true, update: true, delete: false}
+  namespaces: {}
+
+review:
+  confidence_field: confidence
+  confidence_review_values: [confirmed, false-positive, refuted]
+  review_on_change_fields: []
+
+# Hot/warm/cold tiers — DERIVED at query time.
+tier:
+  hot_days: 90
+  warm_days: 730
+  namespaces:
+    cves:        {date_field: date_added}
+    sources:     {date_field: published, from_path: true}
+    concepts:    {date_field: updated}
+    predictions: {date_field: resolves_by, status_field: status, open_values: [open, active], open_floor: hot}
+    briefings:   {date_field: published}
+    trends:      {date_field: updated}
+
+# The one owned type. `id_authority: cve` mints the page id as `cve:<cve_id>` and CONVERGES with any
+# other pack that references the same CVE authority — the composition mechanism: an adversary pack's
+# [[cve/CVE-...]] resolves here by basename, and this CVE gains automatic backlinks to every actor
+# that links it. `required` stays minimal so the KEV importer never trips the write-gate.
+types:
+  cve:  {required: [type], id_authority: cve, id_field: cve_id, owner: okpack-vuln}
+
+type_aliases: {vulnerability: cve, vuln: cve}
+operational_types: []
+depth_critical_types: [cve]
+classify_hints: {cve: [vulnerability, vuln, exploit]}
+classify_catchall: []
+protected_fields: [cve_id, exploited_by, known_ransomware]
+
+enums:
+  # CVSS qualitative bands (extends the core `severity` field's vocabulary)
+  severity: [critical, high, medium, low, none]
+  exploitation_status: [actively-exploited, poc-available, reported, theoretical]
+
+field_enums:
+  severity:             {enum: severity, extensible: true}
+  exploitation_status:  {enum: exploitation_status}
+
+# Reader top section.
+rail_top_section:
+  label: EXPLOITED
+  namespaces: [cves, trends, predictions]

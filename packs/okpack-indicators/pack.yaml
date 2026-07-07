@@ -1,0 +1,24 @@
+# okpack-indicators — pack identity + composition metadata (composable okpacks).
+# `validate.py` checks this; at deploy the engine validates the whole composed
+# set (disjoint ownership, requires present, single trust level).
+name: okpack-indicators
+version: 0.1.0
+description: "Atomic indicators (IOCs) + adversary infrastructure — the observable layer of a CTI vault"
+mission: >-
+  Tracks atomic indicators of compromise (malicious URLs, domains, IPs, file hashes) and the
+  adversary infrastructure behind them, seeded from open feeds (URLhaus / abuse.ch). The observable
+  layer that actor / malware / campaign pages point at — so a reader can pivot from "who" to the
+  concrete artifacts, and each indicator carries automatic backlinks to what references it.
+trust: public             # public | private — compose only within one trust level
+owns:
+  # DOMAIN types this pack defines + owns. The OKF core (source/concept/prediction/finding/briefing/
+  # trend/dashboard + entities/sources/concepts/… namespaces) is ENGINE-owned and inherited.
+  # Disjoint from the other CTI packs (actor/campaign/malware/tool/technique/cve/metric/publisher/
+  # detection/course-of-action/incident/identity) → clean composition into one security vault.
+  types: [indicator, infrastructure]
+  # `indicators` is the pack-owned IOC tree (date-bucketed — IOCs are high-volume + time-ordered).
+  # `infrastructure` lives in the shared entities/ tree. dashboards/operational are shared/generated
+  # (NOT owned here — co-owning them blocks composition).
+  namespaces: [indicators]
+requires: []              # standalone; composes ALONGSIDE the other CTI packs (okpack-sec bundle).
+port_offset: 240          # reader 9440, mcp 8970 (runs alongside other local stacks)

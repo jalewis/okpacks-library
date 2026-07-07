@@ -1,0 +1,41 @@
+{
+  "event": {
+    "activity_id": 1,
+    "activity_name": "Create",
+    "category_name": "Findings",
+    "category_uid": 2,
+    "class_name": "Detection Finding",
+    "class_uid": 2004,
+    "finding_info": {
+      "title": "Unpatched xz on production hosts",
+      "types": [
+        "exposure"
+      ],
+      "uid": "finding--unpatched-xz-prod"
+    },
+    "message": "Unpatched xz on production hosts",
+    "metadata": {
+      "product": {
+        "name": "okf-sec",
+        "vendor_name": "okpack-sec"
+      },
+      "version": "1.3.0"
+    },
+    "severity": "High",
+    "severity_id": 4,
+    "status": "New",
+    "status_id": 1,
+    "time": 1781568000000,
+    "type_uid": 200401,
+    "unmapped": {
+      "rels": {
+        "related-to": [
+          "[[entities/vulnerability/xz-utils-backdoor]]"
+        ]
+      }
+    }
+  },
+  "loss": [
+    "rels"
+  ]
+}
