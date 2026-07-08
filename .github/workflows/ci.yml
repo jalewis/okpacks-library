@@ -1,0 +1,43 @@
+name: validate packs
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: validate every pack definition
+        run: bash scripts/validate-all.sh
+
+  conformance:
+    # Packs that ship a conformance/ suite (e.g. the okpack-cti standard: STIX 2.1 +
+    # OCSF projectors) prove it against the standards' official validators.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-dev.txt
+      - name: run every pack's conformance suite (full-strength — official validators installed)
+        run: bash scripts/conformance-all.sh --strict
+
+  audit:
+    # Security gate (okpacks-library#44): dependency CVE scan (pip-audit) + Python SAST (bandit).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-dev.txt
+      - name: dependency CVE scan + Python SAST
+        run: bash scripts/audit.sh

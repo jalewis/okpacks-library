@@ -1,0 +1,14 @@
+# okpack-vuln co-install — host-schema ADDITIONS (taxonomy-augmenting shape; docs/authoring-a-pack.md §8).
+# Single-source rule: these types are a SUBSET of the standalone schema.yaml (`cve` only). Host wins on
+# collision. `cve` uses id_authority so it CONVERGES with any host/pack referencing the same CVE — the
+# mechanism that lets an adversary pack's [[cve/…]] links resolve to these pages in one composed vault.
+types:
+  cve:
+    required: [type]
+    id_authority: cve
+    id_field: cve_id
+# legacy STIX/old-name resolution carried into the composed host (okengine#181): a page authored
+# `type: vulnerability` under the legacy monolithic-sec taxonomy drains to `cve`.
+type_aliases:
+  vulnerability: cve
+  vuln: cve

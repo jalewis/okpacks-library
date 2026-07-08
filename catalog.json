@@ -1,0 +1,127 @@
+{
+  "version": 1,
+  "catalog": "okpacks-library",
+  "packs": [
+    {
+      "name": "okpack-example",
+      "domain": "generic starter (the skeleton shape)",
+      "repo": "jalewis/okpacks-library",
+      "subdir": "packs/okpack-example",
+      "ref": "main",
+      "engine_version": "v0.10.8",
+      "validated_against": "v0.10.8",
+      "trust": "public",
+      "status": "example"
+    },
+    {
+      "name": "okpack-competitive",
+      "domain": "competitive / market intelligence for ANY tracked market — competitors, products, segments, deals, signals (method-only; identity supplied at deploy)",
+      "repo": "jalewis/okpacks-library",
+      "subdir": "packs/okpack-competitive",
+      "ref": "main",
+      "engine_version": "v0.10.8",
+      "validated_against": "v0.10.8",
+      "trust": "public",
+      "status": "flagship-generic"
+    },
+    {
+      "name": "okpack-ai-research",
+      "domain": "AI / LLM research watch — models, labs, techniques, benchmarks, predictions",
+      "repo": "jalewis/okpacks-library",
+      "subdir": "packs/okpack-ai-research",
+      "ref": "main",
+      "engine_version": "v0.10.8",
+      "validated_against": "v0.10.8",
+      "trust": "public",
+      "status": "community"
+    },
+    {
+      "name": "okpack-vendor-risk",
+      "domain": "vendor / supply-chain risk — vendors, products, components, contracts, incidents; risk ranking against an operator dependency profile (okengine#174)",
+      "repo": "jalewis/okpacks-library",
+      "subdir": "packs/okpack-vendor-risk",
+      "ref": "main",
+      "engine_version": "v0.10.8",
+      "validated_against": "v0.10.8",
+      "trust": "public",
+      "status": "community"
+    },
+    {
+      "name": "okpack-cti",
+      "domain": "security / threat-intel (STIX-aligned) — a composed bundle of the CTI packs",
+      "repo": "jalewis/okpacks-library",
+      "subdir": "packs/okpack-cti",
+      "ref": "main",
+      "engine_version": "v0.10.8",
+      "validated_against": "v0.10.8",
+      "trust": "public",
+      "status": "bundle"
+    },
+    {
+      "name": "okpack-threat-actors",
+      "domain": "Threat-actor / adversary tracking from open-source threat intelligence (ATT&CK, MISP, CERT/vendor reporting)",
+      "repo": "jalewis/okpacks-library",
+      "subdir": "packs/okpack-threat-actors",
+      "ref": "main",
+      "engine_version": "v0.10.8",
+      "validated_against": "v0.10.8",
+      "trust": "public",
+      "status": "community"
+    },
+    {
+      "name": "okpack-vuln",
+      "domain": "Actively-exploited vulnerability (CVE) tracking from CISA KEV",
+      "repo": "jalewis/okpacks-library",
+      "subdir": "packs/okpack-vuln",
+      "ref": "main",
+      "engine_version": "v0.10.8",
+      "validated_against": "v0.10.8",
+      "trust": "public",
+      "status": "community"
+    },
+    {
+      "name": "okpack-threat-landscape",
+      "domain": "Threat-landscape intelligence from annual security reports",
+      "repo": "jalewis/okpacks-library",
+      "subdir": "packs/okpack-threat-landscape",
+      "ref": "main",
+      "engine_version": "v0.10.8",
+      "validated_against": "v0.10.8",
+      "trust": "public",
+      "status": "community"
+    },
+    {
+      "name": "okpack-indicators",
+      "domain": "Atomic indicators (IOCs) + adversary infrastructure — abuse.ch URLhaus seed",
+      "repo": "jalewis/okpacks-library",
+      "subdir": "packs/okpack-indicators",
+      "ref": "main",
+      "engine_version": "v0.10.8",
+      "validated_against": "v0.10.8",
+      "trust": "public",
+      "status": "community"
+    },
+    {
+      "name": "okpack-detections",
+      "domain": "Detections (Sigma) + ATT&CK mitigations — SigmaHQ seed, ATT&CK-technique coverage",
+      "repo": "jalewis/okpacks-library",
+      "subdir": "packs/okpack-detections",
+      "ref": "main",
+      "engine_version": "v0.10.8",
+      "validated_against": "v0.10.8",
+      "trust": "public",
+      "status": "community"
+    },
+    {
+      "name": "okpack-incidents",
+      "domain": "Security incidents + the identities involved — VERIS Community Database seed",
+      "repo": "jalewis/okpacks-library",
+      "subdir": "packs/okpack-incidents",
+      "ref": "main",
+      "engine_version": "v0.10.8",
+      "validated_against": "v0.10.8",
+      "trust": "public",
+      "status": "community"
+    }
+  ]
+}

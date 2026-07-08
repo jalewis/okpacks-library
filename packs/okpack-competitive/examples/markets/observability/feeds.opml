@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Sample market: OBSERVABILITY / monitoring. Vendor newsrooms + one trade outlet.
+     All URLs verified live 2026-07-01. Copy to feeds/feeds.opml (or merge). -->
+<opml version="2.0">
+  <head><title>observability market — sample feeds</title></head>
+  <body>
+    <outline text="Datadog blog"      type="rss" xmlUrl="https://www.datadoghq.com/blog/index.xml"/>
+    <outline text="Grafana blog"      type="rss" xmlUrl="https://grafana.com/blog/index.xml"/>
+    <outline text="New Relic blog"    type="rss" xmlUrl="https://newrelic.com/blog/feed"/>
+    <outline text="Dynatrace news"    type="rss" xmlUrl="https://www.dynatrace.com/news/feed/"/>
+    <outline text="Elastic blog"      type="rss" xmlUrl="https://www.elastic.co/blog/feed"/>
+    <outline text="Honeycomb blog"    type="rss" xmlUrl="https://www.honeycomb.io/feed"/>
+    <outline text="Chronosphere blog" type="rss" xmlUrl="https://chronosphere.io/feed/"/>
+    <outline text="The New Stack (trade)" type="rss" xmlUrl="https://thenewstack.io/feed/"/>
+  </body>
+</opml>

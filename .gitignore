@@ -1,0 +1,18 @@
+# secrets + runtime — NEVER commit (these are pack DEFINITIONS, not deployments)
+.env
+*.env
+.hermes-data/
+config.yaml
+raw/
+
+# python / editor / scratch
+__pycache__/
+*.pyc
+*.bak
+*.bak.*
+.DS_Store
+.venv/
+venv/
+
+# tooling
+.serena/
