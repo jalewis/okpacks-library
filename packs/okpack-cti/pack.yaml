@@ -1,0 +1,28 @@
+# okpack-cti — a pack BUNDLE (okengine#181). A bundle owns NO types and ships no schema; it
+# declares a RECIPE of focused packs to compose, so the full STIX-aligned security vault installs
+# with one command (`framework pull okpack-cti`). The engine resolves the recipe: it pulls `host`
+# as the base vault, then `install-domain --apply`s each `compose` pack onto it.
+name: okpack-cti
+version: 0.3.0
+kind: bundle
+description: "Security / threat-intel BUNDLE (STIX-aligned) — the composed CTI pack family"
+mission: >-
+  The full STIX-aligned security knowledge base, reconstituted from focused composable packs:
+  adversaries + techniques (threat-actors, the host), actively-exploited CVEs (vuln), landscape
+  metrics + publishers (threat-landscape), IOCs + infrastructure (indicators), detections +
+  mitigations (detections), and incidents + identities (incidents). STIX/legacy type names
+  (threat-actor, attack-pattern, vulnerability, …) resolve to the friendly canonical types via
+  each pack's type_aliases, and the composition root ships the STIX 2.1 + OCSF projectors.
+trust: public             # public | private — a bundle composes only within one trust level
+owns: {types: [], namespaces: []}   # a bundle owns NOTHING (its members own the types)
+bundle:
+  host: okpack-threat-actors        # the base vault (owns actor/campaign/malware/tool/technique)
+  compose:                          # install-domain'd onto the host, in order
+    - okpack-vuln                   # cve
+    - okpack-threat-landscape       # metric, publisher
+    - okpack-indicators             # indicator, infrastructure
+    - okpack-detections             # detection, course-of-action
+    - okpack-incidents              # incident, identity
+requires: [okpack-threat-actors, okpack-vuln, okpack-threat-landscape, okpack-indicators,
+           okpack-detections, okpack-incidents]
+port_offset: 200          # reproduces sec's historic reader 9400 / mcp 8930 on the composed host

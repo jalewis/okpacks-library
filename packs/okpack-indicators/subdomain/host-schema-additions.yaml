@@ -1,0 +1,61 @@
+# okpack-indicators co-install — host-schema ADDITIONS (taxonomy-augmenting shape; docs/authoring-a-pack.md §8).
+# Single-source rule: a SUBSET of the standalone schema.yaml (`indicator` + `infrastructure`). Host wins on
+# collision. These are the observable-layer types the pack mints; they wikilink the host's actor/malware world.
+types:
+  indicator:
+    required: [type]
+  infrastructure:
+    required: [type]
+# legacy/STIX-ish name resolution carried into the composed host (okengine#181):
+# a page authored `type: ioc` drains to `indicator`, `type: host` to `infrastructure`.
+type_aliases:
+  ioc: indicator
+  host: infrastructure
+
+# Cockpit tab this pack contributes to a composed vault (merged by install-domain).
+cockpit:
+  tabs:
+  - indicators
+  tab_defs:
+    indicators:
+      label: Indicators
+      boxes:
+      - title: IOC pulse
+        span: 12
+        view: chips
+        dataset:
+          dir: indicators
+          type: indicator
+        group_by: indicator_type
+      - title: Freshest
+        span: 7
+        view: table
+        dataset:
+          dir: indicators
+          type: indicator
+        sort:
+          field: last_seen
+          desc: true
+          require: true
+        limit: 6
+        meta: defanged; by last_seen
+        columns:
+        - field: value
+          label: Indicator
+          defang: true
+        - field: indicator_type
+          label: Type
+        - field: threat
+          label: Threat
+        - field: last_seen
+          label: Seen
+          date: true
+      - title: By malware family
+        span: 5
+        view: bars
+        dataset:
+          dir: indicators
+          type: indicator
+        group_by: malware_family
+        tone: crit
+        limit: 6
