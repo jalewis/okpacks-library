@@ -1,0 +1,12 @@
+# okpack-threat-landscape co-install — host-schema ADDITIONS (taxonomy-augmenting shape; §8).
+# Single-source rule: SUBSET of the standalone schema.yaml (`metric` + `publisher`). Host wins on collision.
+# These are landscape-analysis types the pack mints; they wikilink the host's actor/cve entity world.
+types:
+  metric:
+    required: [type]
+  publisher:
+    required: [type]
+# legacy STIX/old-name resolution carried into the composed host (okengine#181)
+type_aliases:
+  statistic: metric
+  kpi: metric

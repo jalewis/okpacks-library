@@ -1,0 +1,62 @@
+[
+  {
+    "id": "b1e7f3a92c6d",
+    "name": "okpack-vuln-kev-import",
+    "enabled": true,
+    "_note": "THE seed. Pulls the CISA Known Exploited Vulnerabilities catalog (~1200 actively-exploited CVEs) into cves/ — one canonical page per CVE. no_agent, ZERO LLM tokens. MERGE-writes. KEV updates near-daily, so daily/every-few-hours would also be reasonable; weekly is the conservative default.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Seed actively-exploited CVEs from the CISA KEV catalog. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/kev_import.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "dddbb85b3c0e",
+    "name": "okpack-vuln-feed-fetch",
+    "enabled": true,
+    "_note": "Enabled by default but HARMLESS until you populate feeds.opml (ships empty; ZERO upstream calls until you opt in). Optional ongoing advisory signal on top of the KEV seed. The @jitter:2h schedule is expanded to a random minute at install.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:2h"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "okpack-vuln feed pull: fetch the vuln OPML into raw/vuln/ for the ingest lane. Pure script, wakeAgent=false.",
+    "script": "/opt/data/scripts/okpack_vuln_feed_fetch.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "c2f8a4d19e7b",
+    "name": "okpack-vuln-nvd-import",
+    "enabled": true,
+    "_note": "Enriches EXISTING cve/ pages (from KEV) with authoritative CVSS + CWE from the NVD 2.0 API. BOUNDED (CVEs modified in the last 7 days) and ENRICH-ONLY by default — creates no new pages, keeping the vault KEV-curated (actively-exploited focus). `--stub-new` opts into HIGH/CRITICAL discovery. no_agent, ZERO LLM tokens, MERGE-safe. Set NVD_API_KEY to lift the anon rate limit.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:daily"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Enrich CVE pages with CVSS/CWE from NVD. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/nvd_import.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "a7c3e91f52d8",
+    "name": "okpack-vuln-cve-mentions",
+    "enabled": true,
+    "_note": "CVE 'in the news' signal: counts how many source/briefing docs mention each CVE ID in prose and stamps report_mentions + recent_report_mentions onto the cves/ pages, feeding the Vulnerabilities tab's 'Top CVEs by reporting' ranking. no_agent, ZERO LLM tokens, MERGE-safe, idempotent. Daily tracks fresh reporting.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:daily"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Tally CVE mentions across reporting and stamp report_mentions on cve pages. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/cve_mentions.py",
+    "deliver": "local",
+    "no_agent": true
+  }
+]
