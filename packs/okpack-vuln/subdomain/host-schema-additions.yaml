@@ -1,0 +1,101 @@
+# okpack-vuln co-install — host-schema ADDITIONS (taxonomy-augmenting shape; docs/authoring-a-pack.md §8).
+# Single-source rule: these types are a SUBSET of the standalone schema.yaml (`cve` only). Host wins on
+# collision. `cve` uses id_authority so it CONVERGES with any host/pack referencing the same CVE — the
+# mechanism that lets an adversary pack's [[cve/…]] links resolve to these pages in one composed vault.
+types:
+  cve:
+    required: [type]
+    id_authority: cve
+    id_field: cve_id
+# legacy STIX/old-name resolution carried into the composed host (okengine#181): a page authored
+# `type: vulnerability` under the legacy monolithic-sec taxonomy drains to `cve`.
+type_aliases:
+  vulnerability: cve
+  vuln: cve
+
+# Cockpit tab this pack contributes to a composed vault (merged by install-domain).
+cockpit:
+  tabs:
+  - vulnerabilities
+  tab_defs:
+    vulnerabilities:
+      label: Vulnerabilities
+      boxes:
+      - title: Exploited-CVE pulse
+        span: 12
+        view: bignums
+        dataset:
+          dir: cves
+          type: cve
+        items:
+        - label: KEV entries
+          stat: count
+        - label: most-hit vendor
+          stat: top
+          group_by: vendor
+      - title: Remediation deadlines
+        span: 6
+        view: table
+        dataset:
+          dir: cves
+          type: cve
+        sort:
+          field: due_date
+          desc: true
+          require: true
+        limit: 8
+        columns:
+        - field: cve_id
+          label: CVE
+          link: true
+        - field: vendor
+          label: Vendor
+        - field: product
+          label: Product
+        - field: due_date
+          label: Due
+          date: true
+          tone: warn
+      - title: Newest additions
+        span: 6
+        view: table
+        dataset:
+          dir: cves
+          type: cve
+        sort:
+          field: date_added
+          desc: true
+          require: true
+        limit: 8
+        columns:
+        - field: cve_id
+          label: CVE
+          link: true
+        - field: vendor
+          label: Vendor
+        - field: product
+          label: Product
+        - field: date_added
+          label: Added
+          date: true
+      - title: Where it hurts
+        span: 6
+        view: bars
+        dataset:
+          dir: cves
+          type: cve
+        group_by: vendor
+        tone: crit
+        limit: 7
+        meta: KEV entries by vendor
+      - title: Top CVEs by reporting
+        span: 12
+        view: bars
+        dataset:
+          dir: cves
+          type: cve
+        label_field: cve_id
+        value_field: report_mentions
+        limit: 12
+        tone: warn
+        meta: CVEs by number of reports mentioning them
