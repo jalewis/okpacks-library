@@ -1,0 +1,24 @@
+# okpack-threat-landscape — pack identity + composition metadata (composable okpacks).
+# `validate.py` checks this; at deploy the engine validates the whole composed
+# set (disjoint ownership, requires present, single trust level).
+name: okpack-threat-landscape
+version: 0.2.0
+description: "Threat-landscape intelligence from annual security reports"
+mission: >-
+  Turns the annual security-report firehose (DBIR, M-Trends, threat-landscape + industry/market
+  surveys) into a landscape knowledge graph: which VENDORS say what, which THEMES are rising or
+  fading year over year, and which METRICS (breach cost, ransomware payment, dwell time) the field
+  converges — or disagrees — on. The landscape complement to actor-tracking (okpack-threat-actors)
+  and exploited-vuln tracking (okpack-vuln); composes alongside both.
+trust: public             # public | private — compose only within one trust level
+owns:
+  # Owns `metric` (a statistic tracked across reports/years) + `publisher` (a firm/agency that
+  # publishes reports). Core types (source/concept/prediction/finding/briefing/trend/dashboard) are
+  # ENGINE-owned and inherited. Deliberately owns NOTHING that okpack-threat-actors, okpack-vuln,
+  # or okpack-vendor-risk (which owns `vendor`) owns — disjoint ownership → clean composition.
+  # dashboards/operational are generated/excluded (schema.yaml `exclude`) and shared across packs —
+  # NOT domain-owned, so they're not listed here (co-owning them blocks composition).
+  types: [metric, publisher]
+  namespaces: [metrics]
+requires: []              # standalone; composes ALONGSIDE okpack-threat-actors + okpack-vuln.
+port_offset: 220          # reader 9420, mcp 8950

@@ -1,0 +1,41 @@
+paths:
+  concepts/a/adobe-patches-cvss-flaws-in-ColdFusion-and-Campaign Classic--2026-07-01.md: concept
+  concepts/b/beyondtrust-critical-auth-bypass-flaws-in-RS PRA--2026-07-01.md: concept
+  entities/e/equation-group.md: actor
+  entities/c/cve-2026-43497-ghostlock-linux-kernel-flaw-enabling-root-container-esca-256e6091.md: cve
+  entities/c/china.md: identity
+  entities/g/goddamn-ransomware-hyadina-chain-latest-variant-may-20.md: malware
+  entities/h/hajime.md: infrastructure
+  entities/h/hyadina-ransomware-operations-since-2024-symantec-attribution.md: actor
+  entities/l/lexfo-research-labs.md: publisher
+  entities/o/openssl-hollowbyte-dos.md: cve
+  entities/o/ox-security.md: publisher
+  entities/r/rogue-agent-flaw-could-have-let-attackers-hijack-google-dialogflow-cx-chatbots.md: cve
+  entities/s/e/securonix.md: publisher
+  entities/s/y/synacktiv.md: publisher
+  entities/t/tenda-hidden-admin-endpoints-tb-firmware-backdoor-access.md: cve
+  entities/u/u-boot-flaws-2026-july.md: cve
+  entities/w/wp2shell-wordpress-core-rce.md: cve
+  cves/Misc/other.md: cve
+  cves/windows-legacyhive-zero-day.md: cve
+  security-incidents/2013/dow-chevron-ransomware-incident.md: incident
+  security-incidents/2026/asyncapi-package-compromise.md: incident
+  security-incidents/2026/cisa-sharepoint-active-exploitation.md: incident
+  entities/a/i/aitkin-county-hhs-email-breach-83-114-individual-records-april-2026.md: incident
+  sources/06/chcokptjluy-te.md: source
+  sources/2Q6/Q/callspoofing_rus_comm_charges_july.md: source
+  sources/2Q6/Q/phish_a_service_msoo_abuse_july.md: source
+  sources/2026/07/08/CVE-2026-43497.md: cve
+  sources/actor-pack-campaign-reference-UAT-twentieighteenths-hundreden-threat-intelligence-research-analysis-type-report-news-feed-talosintelligence.md-blog-post-july2OthTWOThousandEighteen-thirty-TWELVE-HOURSTIMEZONEOFFSET.md: source
+  sources/rockwell-automation-logix-controller-dos-vulnerabilities.md: source
+  sources/incidents/2026-07/cubespace-cw0057-reaction-wheel.md: source
+  sources/incidents/2026-07/gardyn-iot-hub.md: source
+  sources/incidents/2026-07/st-engineering-idirect-iq-series-terminals.md: source
+  sources/threat-actors/chocopoc-rat-new-exploit-repos-fake-vulnerability.md: source
+  sources/threat-actors/critical-cursor-flaws-could-let-prompt-injection-escape-sandbox-and-run.md: source
+  sources/threat-actors/eu-pepegasus-kouloglou-surveillance.md: source
+  sources/threat-actors/fatfs-runzero-vulnerabilities.md: source
+  sources/threat-actors/fortibleed-inc-and-lynx-ransomware.md: source
+  sources/threat-actors/jadepuffer-first-autonomous-agent-ransomware.md: source
+  sources/threat-actors/netnut-google-fbi-disruption-millions-deceased.md: source
+  sources/threat-actors/scattered-spider-twelve-year-old-peter-stokes-extradited.md: source

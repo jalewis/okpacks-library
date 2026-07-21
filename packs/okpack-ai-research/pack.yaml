@@ -1,0 +1,20 @@
+# okpack-ai-research — pack identity + composition metadata (composable okpacks).
+# `framework_validate.py` shape-checks this; at deploy the engine validates the
+# whole composed set (disjoint ownership, requires present, single trust level).
+name: okpack-ai-research
+version: 0.3.1
+description: "AI / LLM research watch"
+mission: >-
+  Tracks models, labs, methods and benchmarks from papers and release feeds, so a reader can follow the research frontier from the vault instead of the firehose.
+trust: public             # public | private — compose only within one trust level
+owns:
+  # The types + namespaces THIS pack defines and owns (others may read/link them,
+  # but only the owner mutates owned fields). Mirrors schema.yaml `types:` and the
+  # wiki/ content tree.
+  types: [model, lab, researcher, method, benchmark, dataset]
+  # `dashboards` + `operational` are owned (the pack writes them) but EXCLUDED from OKF processing
+  # in schema.yaml — generated/internal outputs, not curated/tiered knowledge (okpacks-library#20).
+  # `briefings` is owned AND surfaced — the first-class daily/weekly brief namespace.
+  namespaces: [dashboards, operational]
+requires: []              # packs this one depends on, e.g. [okpack-base@>=0.1.0]
+port_offset: 100          # reader 9300, mcp 8830 (runs alongside other local stacks)

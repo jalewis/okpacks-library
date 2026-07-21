@@ -1,0 +1,122 @@
+# OKF domain contract for: AI / LLM Research Watch
+# The engine reads this (never hardcodes layout) — types + partitioning + hot_set.
+# Edit the types/fields to your domain; the partitioning/hot_set defaults are sane.
+version: 1
+apply_under: [wiki/]
+# Namespaces EXCLUDED from OKF knowledge processing — NOT partitioned, tiered, browsed, or
+# validated as curated pages. The pack still owns + writes them (see pack.yaml `owns.namespaces`):
+# they are operational/generated outputs, not knowledge.
+exclude:
+  - wiki/operational/    # engine-internal operational pages
+  - wiki/dashboards/     # generated health/operational dashboards (kb-health, contradictions,
+                         # content-quality, …) — regenerated artifacts each run, not curated
+                         # knowledge. The daily/weekly BRIEF is NOT here: it's a first-class
+                         # `briefings` namespace (surfaced + the reader's default landing).
+  - wiki/examples/       # shipped orientation demos (page-shapes.md) — NOT knowledge; excluding
+                         # keeps the fake "Example-2" pages out of index/tier/search drains.
+
+okf:
+  required: [type]            # OKF v0.1 base: every page needs a type
+common_optional: [title, description, tags, created, updated, related, sources]
+
+# How each namespace buckets on disk (read by okf_migrate / reshelve / reshard).
+partitioning:
+  reshard_over: 500
+  namespaces:
+    entities:    {strategy: by-letter, reshard_by: second-letter}
+    sources:     {strategy: by-date, date_field: published, reshard_by: day}
+    concepts:    {strategy: by-letter, reshard_by: second-letter}
+    predictions: {strategy: flat}
+    briefings:   {strategy: flat}                  # daily/weekly synthesized brief — one dated page each
+    trends:      {strategy: flat}                  # dated, directional trend pages (okengine#37)
+
+# The agent's load-first working set (build_hot_set -> wiki/HOT.md).
+hot_set:
+  days: 30
+  cap: 300
+  sections:
+    - {kind: open, namespace: predictions, status_field: status, open_values: [open, active], secondary_field: resolves_by, title: "Open predictions"}
+    - {kind: recent, namespace: sources, date_field: published, layout: by-date, title: "Recent sources"}
+    - {kind: recent, namespace: entities, date_field: updated, show_type: true, title: "Recently-updated entities"}
+
+# Write-permission matrix (conformance G2) — enforced by the MCP write path
+# (okengine-write). default delete:false => tombstone, never hard-rm; a
+# namespace may set create/update:false to mark it human-authored.
+permissions:
+  default: {create: true, update: true, delete: false}
+  namespaces: {}
+
+# Review trust model (conformance G3) — FLAG, not gate. An agent asserting a
+# categorical confidence verdict (or a review field) doesn't block; the write
+# lands and the page is flagged (needs_review + wiki/_review-queue.md). Numeric
+# confidence + low/med/high never flag.
+review:
+  confidence_field: confidence
+  confidence_review_values: [confirmed, false-positive, refuted]
+  review_on_change_fields: []
+
+# Hot/warm/cold tiers (conformance G4) — DERIVED at query time (tier_lib), never
+# stored. Read by the tier-refresh cron + the --tier filter in kb_search/okengine-mcp.
+# by-date namespaces derive the date from the path; open predictions floor at hot.
+tier:
+  hot_days: 30
+  warm_days: 365
+  namespaces:
+    sources:     {date_field: published, from_path: true}
+    entities:    {date_field: updated}
+    concepts:    {date_field: updated}
+    predictions: {date_field: resolves_by, status_field: status, open_values: [open, active], open_floor: hot}
+    briefings:   {date_field: published}
+    trends:      {date_field: updated}
+
+# DOMAIN types owned by this pack (live under the core `entities/` namespace). The OKF core —
+# source/concept/prediction/finding/dashboard/briefing/trend + the entities/sources/concepts/…
+# namespaces — is ENGINE-owned and inherited, NOT re-declared here (okengine#90). To add a domain
+# field to a core type, use the `extends` grammar (engine docs/core-types-and-extensions.md) —
+# re-declaring a core type breaks composition. (This pack currently needs no extends block.)
+types:
+  model:      {required: [type]}                            # an AI model or system (e.g. an LLM)
+  lab:        {required: [type]}                            # an org producing models/research
+  researcher: {required: [type]}                            # a person
+  method:     {required: [type]}                            # a method/architecture (RLHF, MoE, RAG, …)
+  benchmark:  {required: [type]}                            # an eval/benchmark (MMLU, SWE-bench, …)
+  dataset:    {required: [type]}                            # a training/eval dataset
+
+# `technique` is intentionally NOT a legacy alias here. It is the canonical ATT&CK type owned by
+# okpack-threat-actors in a composed vault; AI-research's distinct concept is `method`. Legacy
+# AI-research pages must be migrated explicitly to `method`, never contextually reinterpreted.
+type_aliases: {}
+
+# `source_kind`, `publisher`, `reliability`, `credibility`, `severity`, `tlp` are CORE optional
+# fields (engine base, okengine#90) — no `extends` needed for the field. AI-research only EXTENDS
+# the base `source_kind` enum with its domain values (lab-post, commentary) via the `enums:` block.
+
+# Closed value vocabularies for the domain. The engine ignores these keys; this repo's
+# validate.py checks they are well-formed (--probe/offline) and the conformance suite checks
+# page frontmatter values against them. A missing value never fails; a WRONG value fails unless
+# the field is marked `extensible: true` (open vocab — unknown values warn instead).
+enums:
+  source_kind:       [paper, lab-post, commentary, release, news]
+  prediction_status: [open, active, confirmed, refuted, partial, expired-ungraded]
+  horizon:           [short, medium, long, strategic]   # short ≤90d · medium ≤1y · long ≤5y · else strategic
+  modality:          [text, code, vision, image, audio, video, speech, multimodal, embedding, robotics]
+  release_status:    [rumored, announced, preview, released, deprecated]
+  lab_kind:          [industry, academic, government, nonprofit, collective]
+
+# Which frontmatter field draws from which enum. `enum:` applies to any type; `by_type:` scopes a
+# field whose vocabulary depends on the page type. `extensible: true` => unknown values warn (open
+# vocab) instead of failing. `confidence` is intentionally unconstrained: a prediction may assert a
+# numeric 0.0–1.0 OR a categorical low/medium/high.
+field_enums:
+  source_kind:    {enum: source_kind}
+  horizon:        {enum: horizon}
+  modality:       {enum: modality, extensible: true}
+  release_status: {enum: release_status}
+  lab_kind:       {enum: lab_kind, extensible: true}
+  status:         {by_type: {prediction: prediction_status}}
+
+# Reader top section — the synthesized brief pinned above the raw storage namespaces. The reader
+# also lands on the newest briefings/ page by default (okengine briefings-by-default).
+rail_top_section:
+  label: ANALYSIS
+  namespaces: [briefings, trends, predictions]

@@ -1,0 +1,108 @@
+# okpack-incidents co-install — host-schema ADDITIONS (taxonomy-augmenting shape; docs/authoring-a-pack.md §8).
+# Single-source rule: a SUBSET of the standalone schema.yaml (`incident` + `identity`). Host wins on
+# collision. These are the event-layer types the pack mints; incidents wikilink the host's actor/cve world.
+types:
+  incident:
+    required: [type]
+    id_authority: incident
+    id_field: incident_id
+  identity:
+    required: [type]
+common_optional: [sector]
+# legacy/STIX identity names resolve to `identity` in the composed host (okengine#181); breach/event -> incident.
+type_aliases:
+  organization: identity
+  company: identity
+  person: identity
+  agency: identity
+  government-agency: identity
+  government-entity: identity
+  team: identity
+  breach: incident
+  event: incident
+
+# Field vocabularies corpus_audit's enum-drift metric tracks — travel into a composed vault via
+# install-domain's merge_enums (okengine#259 rec 12) so drift on incident.incident_type /
+# identity.identity_class is DETECTABLE in the composed deploy. Mirror of the standalone schema.yaml
+# (host wins on collision; source_kind is intentionally omitted — the host owns that vocabulary).
+enums:
+  incident_type: [malware, hacking, social, misuse, physical, error, environmental, unknown]
+  identity_class: [organization, government, individual, group, class, unknown]
+field_enums:
+  incident_type: {by_type: {incident: incident_type}}
+  identity_class: {by_type: {identity: identity_class}}
+
+# Cockpit tab this pack contributes to a composed vault (merged by install-domain).
+cockpit:
+  tabs:
+  - incidents
+  tab_defs:
+    incidents:
+      label: Incidents
+      boxes:
+      # Lead with recency so the tab reads as current-threat orientation, not an undated pile
+      # (okengine#259 rec 9). The corpus is a HISTORICAL breach-incident reference (VERIS/VCDB-style,
+      # 1984-present); the aggregate boxes below are all-time and provenance-badged as reference, not
+      # live activity — this table surfaces the newest-dated incidents up top.
+      - title: Most recent incidents
+        span: 12
+        view: table
+        dataset:
+          dir: security-incidents
+          type: incident
+        sort:
+          field: incident_date
+          desc: true
+          require: true
+        limit: 8
+        meta_template: "showing {shown} of {total} dated historical incidents"
+        columns:
+        - field: title
+          label: Incident
+          link: true
+        - field: incident_type
+          label: Type
+        - field: incident_date
+          label: When
+          date: true
+          tone: warn
+        empty: "No dated incidents in the corpus yet."
+      - title: Incident corpus
+        span: 12
+        view: bignums
+        dataset:
+          dir: security-incidents
+          type: incident
+        meta: "historical incident records in the deployed corpus"
+        items:
+        - label: incidents
+          stat: count
+        # okengine#259 rec 9 + rec 11 provenance: an all-time historical corpus, not current activity.
+        provenance:
+          label: all-time reference
+          note: "Historical breach-incident corpus (VERIS/VCDB-style), 1984-present — all-time totals, not current threat activity."
+      - title: By sector
+        span: 6
+        view: bars
+        dataset:
+          dir: security-incidents
+          type: incident
+        group_by: sector
+        limit: 8
+        meta: "all-time incidents aggregated to two-digit NAICS sectors"
+        provenance:
+          label: all-time
+          note: "All-time breach counts by victim sector — historical reference, not current activity."
+      - title: By incident type
+        span: 6
+        view: bars
+        dataset:
+          dir: security-incidents
+          type: incident
+        group_by: incident_type
+        tone: warn
+        limit: 6
+        meta: "all-time incidents by VERIS action category"
+        provenance:
+          label: all-time
+          note: "All-time breach counts by incident type — historical reference, not current activity."

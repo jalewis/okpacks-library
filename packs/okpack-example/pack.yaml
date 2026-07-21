@@ -1,0 +1,17 @@
+# okpack-example — pack identity + composition metadata (composable okpacks).
+# `validate.py` checks this; at deploy the engine validates the whole composed
+# set (disjoint ownership, requires present, single trust level).
+name: okpack-example
+version: 0.1.5
+description: "Generic starter pack (the skeleton shape)"
+mission: >-
+  A worked example of a complete OKEngine pack — schema, persona, feeds, crons, both co-install forms. Replace everything domain-shaped with your own.
+trust: public             # public | private — compose only within one trust level
+owns:
+  # The types + namespaces THIS pack defines and owns (others may read/link them,
+  # but only the owner mutates owned fields). Add your DOMAIN entity types here as
+  # you add them to schema.yaml `types:`.
+  types: [topic, playbook]
+  namespaces: []
+requires: []              # packs this one depends on, e.g. [okpack-base@>=0.1.0]
+port_offset: 0   # explicit baseline — bump if 9200/8730 collide with another stack on your host

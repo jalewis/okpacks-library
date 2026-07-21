@@ -1,0 +1,20 @@
+# okpack-vendor-risk — pack identity + composition metadata (composable okpacks).
+# `validate.py` checks this; at deploy the engine validates the whole composed
+# set (disjoint ownership, requires present, single trust level).
+name: okpack-vendor-risk
+version: 0.1.1
+description: "Vendor / supply-chain risk monitoring"
+mission: >-
+  Tracks the organizations, products, components and contracts an operator depends on; ledgers dated incidents against them and ranks vendor risk relative to the configured dependency profile — 'which suppliers should worry us this quarter, and why.'
+trust: public             # public library pack — composes with okpack-cti/okpack-competitive
+owns:
+  # Only what this pack INTRODUCES. product/vulnerability/incident are deliberately
+  # NOT DECLARED (declaring = owning in root composition; okpack-competitive owns
+  # product, okpack-cti owns vulnerability/incident) — standalone use rides
+  # strict_types: false + the completeness rules; co-installs get the sibling
+  # pack's authoritative shapes.
+  types: [vendor, component, contract, location]
+  namespaces: [contracts, incidents]
+requires: []              # packs this one depends on, e.g. [okpack-base@>=0.1.0]
+port_offset: 400 # default host-port offset: reader 9200+N, mcp 8730+N.
+                          # `framework pull` applies it unless you pass --port-offset.

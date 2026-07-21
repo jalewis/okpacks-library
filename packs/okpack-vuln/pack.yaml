@@ -1,0 +1,21 @@
+# okpack-vuln — pack identity + composition metadata (composable okpacks).
+# `validate.py` checks this; at deploy the engine validates the whole composed
+# set (disjoint ownership, requires present, single trust level).
+name: okpack-vuln
+version: 0.1.1
+description: "Actively-exploited vulnerability (CVE) tracking"
+mission: >-
+  Tracks the vulnerabilities that are actually being EXPLOITED — seeded from CISA's Known Exploited
+  Vulnerabilities (KEV) catalog, the high-signal subset that matters — as one canonical page per CVE.
+  Designed to COMPOSE: it owns `cve`, so an actor/adversary pack's [[cve/...]] links resolve to real
+  vulnerability pages, and each CVE gains automatic backlinks to every actor/malware that exploits it.
+trust: public             # public | private — compose only within one trust level
+owns:
+  # Owns the `cve` type + the `cves/` namespace. Core types (source/concept/prediction/briefing/
+  # trend/dashboard) are ENGINE-owned and inherited — never redeclared here. This pack deliberately
+  # owns NOTHING an adversary/market pack owns (disjoint ownership → clean composition).
+  # dashboards/operational are generated/excluded + shared — not domain-owned, so not listed here.
+  types: [cve]
+  namespaces: [cves]
+requires: []              # standalone; composes ALONGSIDE okpack-threat-actors (which links [[cve/...]]).
+port_offset: 210          # reader 9410, mcp 8940

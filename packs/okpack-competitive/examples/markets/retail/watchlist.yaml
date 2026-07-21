@@ -1,0 +1,11 @@
+# Sample watchlist: RETAIL. Copy to config/competitive-watchlist.yaml and edit.
+segments:
+  mass-merchandise:
+    label: "Mass merchandise / big box"
+    competitors: [walmart, target, costco]
+    axes: {x: "e-commerce penetration", y: "price leadership"}
+  grocery:
+    label: "Grocery"
+    competitors: [kroger, albertsons, aldi]
+    axes: {x: "private-label depth", y: "delivery/fulfillment reach"}
+watch_signals: [pricing, launch, funding, hire, partnership, acquisition]

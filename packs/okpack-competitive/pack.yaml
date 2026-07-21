@@ -1,0 +1,19 @@
+# okpack-competitive — pack identity + composition metadata (composable okpacks).
+# `validate.py` checks this; at deploy the engine validates the whole composed set
+# (disjoint ownership, requires present, single trust level).
+#
+# METHOD-ONLY pack: it ships the competitive-intel STRUCTURE (types, persona, lanes) and
+# NO proprietary content. The watchlist (who you track), feeds (your sources), tuned
+# heuristics, and the vault content are DEPLOYMENT config — never in this template.
+name: okpack-competitive
+version: 0.1.1
+description: "Competitive / market intelligence for any tracked market"
+mission: >-
+  Tracks competitors, products, segments, deals and movement signals for an operator-configured market; compiles feeds into a durable graph that answers who is moving, where, and what it means for positioning.
+trust: public             # public library pack — composes with okpack-cti/okpack-vendor-risk
+owns:
+  types: [competitor, product, segment, deal, signal]
+  namespaces: []
+requires: []             # standalone
+port_offset: 300         # reader 9500, mcp 9030 — clears 8730/9200 + sec's +200 so it can
+                         # run alongside other okengine stacks on one host
