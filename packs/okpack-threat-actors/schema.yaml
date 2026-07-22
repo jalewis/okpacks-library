@@ -1,0 +1,434 @@
+# OKF domain contract for: okpack-threat-actors — Threat-Actor / Adversary Tracking (public example).
+# The engine reads this (never hardcodes layout) — types + partitioning + hot_set.
+version: 1
+apply_under: [wiki/]
+
+# Namespaces EXCLUDED from OKF knowledge processing (still owned + written; not partitioned/
+# tiered/browsed/validated as curated pages).
+exclude:
+  - wiki/operational/    # engine-internal operational pages
+  - wiki/dashboards/     # generated coverage/health dashboards — regenerated artifacts, not knowledge
+  - wiki/examples/       # shipped orientation demo (page-shapes.md)
+
+okf:
+  required: [type]            # OKF v0.1 base: every page needs a type
+  should:   [id]              # every page SHOULD carry a stable `id` (engine base-schema floor; advisory)
+strict_types: true
+common_optional: [id, title, description, tags, created, updated, related, sources, tlp, confidence,
+                  aliases, attack_id, first_seen, last_seen, origin_country, origin_country_raw,
+                  authority_import]
+
+# How each namespace buckets on disk (read by okf_migrate / reshelve / reshard).
+partitioning:
+  reshard_over: 500
+  namespaces:
+    entities:    {strategy: by-letter, reshard_by: second-letter}   # actors / campaigns / malware / tools
+    techniques:  {strategy: by-letter, reshard_by: second-letter}   # ATT&CK T#### + sub-techniques (~650)
+    sources:     {strategy: by-date, date_field: published, reshard_by: day}
+    concepts:    {strategy: by-letter, reshard_by: second-letter}   # CTI concepts + ATT&CK mitigations (M####)
+    predictions: {strategy: flat}
+    findings:    {strategy: flat}                                   # human-authored analyst assessments
+    briefings:   {strategy: flat}                                   # daily/weekly threat brief
+    trends:      {strategy: flat}                                   # dated, directional shifts (okengine#37)
+
+# The agent's load-first working set (build_hot_set -> wiki/HOT.md).
+hot_set:
+  days: 30
+  cap: 300
+  sections:
+    - {kind: open, namespace: predictions, status_field: status, open_values: [open, active], secondary_field: resolves_by, title: "Open forecasts"}
+    - {kind: recent, namespace: sources, date_field: published, layout: by-date, title: "Recent reports / advisories"}
+    - {kind: recent, namespace: entities, date_field: updated, show_type: true, title: "Recently-updated actors / malware"}
+
+# Write-permission matrix (conformance G2) — enforced by the MCP write path (okengine-write).
+permissions:
+  default: {create: true, update: true, delete: false}
+  namespaces:
+    # Analyst-only: humans author findings (via git); the agent may READ but not write them.
+    findings: {create: false, update: false}
+
+# Review trust model (conformance G3) — FLAG, not gate. Attribution is CONTESTED: any change to a
+# page's attribution_confidence queues it for human review (it never silently re-attributes).
+review:
+  confidence_field: confidence
+  confidence_review_values: [confirmed, false-positive, refuted]
+  review_on_change_fields: [attribution_confidence]
+
+# Hot/warm/cold tiers (conformance G4) — DERIVED at query time (tier_lib), never stored.
+tier:
+  hot_days: 30
+  warm_days: 365
+  namespaces:
+    sources:     {date_field: published, from_path: true}
+    entities:    {date_field: updated}
+    techniques:  {date_field: updated}
+    concepts:    {date_field: updated}
+    predictions: {date_field: resolves_by, status_field: status, open_values: [open, active], open_floor: hot}
+    briefings:   {date_field: published}
+    trends:      {date_field: updated}
+
+# DOMAIN types owned by this pack. actor/campaign/malware/tool live under core `entities/`;
+# `technique` lives under the pack-owned `techniques/` tree. Core types
+# (source/concept/prediction/finding/briefing/trend/dashboard) are ENGINE-owned and inherited —
+# NOT redeclared. `required` stays minimal ([type]): the bulk importers can't guarantee richer
+# fields, and the write-gate must never reject a legitimately-shaped page; the quality/enrich lanes
+# fill the rest. ATT&CK mitigations import as core `concept` pages (concept_kind: mitigation) into
+# concepts/, not a new type.
+types:
+  actor:      {required: [type], owner: okpack-threat-actors}   # a threat group / intrusion set (ATT&CK G####)
+  campaign:   {required: [type], owner: okpack-threat-actors}   # a time-bound operation (ATT&CK C####)
+  malware:    {required: [type], owner: okpack-threat-actors}   # a malicious software family (ATT&CK S####)
+  tool:       {required: [type], owner: okpack-threat-actors}   # a dual-use tool used offensively (ATT&CK S####)
+  technique:  {required: [type], owner: okpack-threat-actors}   # a MITRE ATT&CK TTP (T####), carries tactic(s)
+
+# --- engine cron inputs (all OPTIONAL) ---
+# Canonicalize legacy/alias type names onto a `types:` key (schema-type-drain proposes the rename).
+# The STIX/legacy names (threat-actor, attack-pattern, software, …) are aliases so a page authored
+# under the legacy monolithic-sec taxonomy resolves to the canonical friendly type when composed (okengine#181).
+# `software: tool` (was: malware) — an ATT&CK S#### object is typed malware|tool directly from STIX by
+# attack_import; the alias only catches a page typed generically `software`, which maps to `tool`.
+type_aliases:
+  group: actor
+  adversary: actor
+  intrusion-set: actor
+  apt: actor
+  apt-group: actor
+  threat-actor: actor
+  actor-individual: actor
+  actor_group: actor
+  ransomware_group: actor
+  threat-actor-attribution-cluster: actor
+  threat-actor-cluster: actor
+  threat-actor-group: actor
+  threat-actor_group: actor
+  threat_actor: actor
+  threat_actor_cluster: actor
+  threat_actor_family: actor
+  threat_actor_group_or_campaign_subgroup: actor
+  threat_actor_individual: actor
+  threat_group: actor
+  attack-pattern: technique
+  attack-technique: technique
+  # `product` is intentionally not an alias: okpack-competitive owns that canonical market type.
+  # Security software observed in actor activity is `tool`; migrate legacy pages explicitly.
+  software: tool
+  software-entity: tool
+  vendor-product: tool
+  vendor_software: tool
+  weapon: tool
+  tool-phishing-kit: tool
+  ransomware: malware
+  ransomware-family: malware
+  malware-family: malware
+  malware-tool: tool
+  malware_analysis: malware
+  malware_family: malware
+  malware_family_or_phishing_infrastructure_platform: malware
+  placeholder-malware-category: malware
+  adversary-campaign: campaign
+  attack-campaign: campaign
+  attack_campaign: campaign
+  campaign-grouping: campaign
+  malware_campaign: campaign
+  threat-actor-campaign: campaign
+  campaign aliases_: campaign
+  entity_category: campaign
+  CISAlert: source
+  cyber-news-source: source
+  source-article: source
+  source-page: source
+  source_article: source
+  source-kind: source
+  source-vulnerable-product-advisory: source
+  pattern: concept
+  entity/pattern: concept
+  vulnerability-family: concept
+  vulnerability_discovery: concept
+  incident-prediction-target-page: concept
+  hub-summary: dashboard
+  log-entry: dashboard
+
+# Types whose pages are operational/derived — exempt from type-conformance drift.
+operational_types: []
+
+# Types that warrant a deeper quality bar (page-quality-audit demotes thin pages of these).
+depth_critical_types: [actor, campaign]
+
+# Hints for schema-classify-drain: a canonical type -> tags that imply it.
+classify_hints:
+  actor:     [group, apt, intrusion-set, threat-actor, adversary]
+  malware:   [ransomware, backdoor, implant, rat, stealer, loader]
+  tool:      [utility, framework, dual-use]
+  technique: [ttp, attack-technique, att&ck]
+  campaign:  [operation, intrusion-set-campaign]
+
+# Catch-all types the classifier should disambiguate.
+classify_catchall: []  # bare `entity` is always selected by the engine
+
+# Curated frontmatter the write path must NEVER silently drop (detect-field-loss guards these).
+# aliases + attack_id are the alias-reconciliation spine; related_actors is the correlation output.
+protected_fields: [aliases, attack_id, related_actors, attribution_confidence, origin_country_raw]
+
+# Closed value vocabularies. A missing value never fails; a WRONG value fails unless the field is
+# `extensible: true` (open vocab — unknown values warn).
+enums:
+  # ATT&CK Enterprise tactics — the kill-chain backbone (applies to technique pages)
+  tactic: [reconnaissance, resource-development, initial-access, execution, persistence,
+           privilege-escalation, stealth, defense-impairment, credential-access, discovery, lateral-movement,
+           collection, command-and-control, exfiltration, impact]
+  actor_type:   [nation-state, cybercriminal, hacktivist, insider, commercial-surveillance, unknown]
+  motivation:   [espionage, financial, destructive, hacktivism, information-operations, unknown]
+  malware_type: [ransomware, backdoor, rat, loader, downloader, stealer, wiper, botnet, rootkit, worm, trojan]
+  actor_status: [active, dormant, defunct, unknown]
+  prediction_status: [open, active, confirmed, refuted, partial, expired-ungraded]
+  # attribution confidence — the CTI-discipline field, SEPARATE from the generic numeric `confidence`
+  attribution_confidence: [confirmed, high, moderate, low, suspected, unverified]
+  target_sector: [government, defense, financial, healthcare, energy, technology, telecom,
+                  manufacturing, education, retail, critical-infrastructure, media, ngo, transportation]
+  concept_kind:  [mitigation, tradecraft, general]   # distinguishes ATT&CK mitigations in concepts/
+  # extend the core source_kind enum with CTI report kinds.
+  # ADDING VALUES: this is a STRICT enum, so a genuinely-new kind an ingest/compile lane emits shows
+  # up as corpus_audit drift, NOT as a silent write. When a drift value is a legitimate new category
+  # (not a typo/variant/free-text), ADD it here — that is the intended curation path. Reserve
+  # value_aliases (write-path normalization) for typo/variant collapses, and a normalizer lane (see
+  # okpack-vuln severity_normalize) for free-text that must be coerced to a fixed band. (okengine#259)
+  source_kind:   [advisory, threat-report, vendor-blog, vendor-research, community-reporting,
+                  government-alert, incident-report, commentary, paper]
+
+# Which frontmatter field draws from which enum. `enum:` applies to any type; `by_type:` scopes a
+# field to a page type. `extensible: true` => unknown values warn (open vocab) instead of failing.
+field_enums:
+  tactic:                 {enum: tactic}
+  actor_type:             {by_type: {actor: actor_type}}
+  motivation:             {enum: motivation, extensible: true}
+  malware_type:           {by_type: {malware: malware_type}, extensible: true}
+  attribution_confidence: {enum: attribution_confidence}
+  target_sector:          {enum: target_sector, extensible: true}
+  concept_kind:           {enum: concept_kind, extensible: true}
+  source_kind:            {enum: source_kind}
+  status:                 {by_type: {actor: actor_status, prediction: prediction_status}}
+
+# Reader top section — the synthesized brief pinned above the raw storage namespaces.
+rail_top_section:
+  label: ANALYSIS
+  namespaces: [briefings, trends, predictions, findings]
+
+# Reader grouping — browse pages BY KIND (label -> [types]), so "Threat actors" is its own page
+# instead of actors + malware + tools mixed together in the entities/ namespace. (The reader's
+# display_groups is label->[types], NOT a by-field grouping — a per-tactic ATT&CK-matrix view would
+# need a reader feature that doesn't exist yet.)
+display_groups:
+  Threat actors: [actor]
+  Campaigns: [campaign]
+  Malware & tools: [malware, tool]
+  Techniques: [technique]
+# Source reliability (Admiralty A–F) for the ingest feeds this pack cites, so the cockpit/reader
+# Evidence section and conflict view grade each citation. Keyed by the exact `sources:` value the
+# importers stamp. A completely-reliable authority = A; a usually-reliable curated community feed = B.
+source_registry:
+  MITRE ATT&CK: {reliability: A}
+  Microsoft: {reliability: A}
+  MISP galaxy: {reliability: B}
+  VCDB: {reliability: B}
+  URLhaus: {reliability: B}
+# Cockpit config (okengine-cockpit reads this `cockpit:` block) — retarget the research/investigation
+# surface for CTI: threat-brief streams, an ACTOR watchlist ranked by recent activity, dashboards, and
+# the built-in search→page→backlinks investigation pivot.
+cockpit:
+  title: "Threat Actors — CTI"
+  short_title: "CTI"
+  # data-first tabs: each tab = an analyst question, each box = one dataset rendered.
+  # STANDALONE subset — this pack owns the adversary graph only; a composed deployment
+  # (e.g. the okpack-cti bundle) extends tab_defs in ITS schema.yaml with the guest
+  # packs' datasets (vulnerabilities/detections/incidents/indicators).
+  tabs: [overview, adversaries, assessments, browse]
+  streams:
+    - {key: briefs, label: "Threat briefs", dir: briefings, type: briefing}
+  predictions: [predictions]
+  # type-aware fact-panel order (okengine profile): an actor page reads as an analyst card —
+  # identity → capability → activity → attribution. The engine renders EXACTLY these fields as the
+  # top profile, in this order; every other frontmatter field (ids, urls, dates, provenance like
+  # attack_id/status/url/first_reported/mentioned_in_sources) drops to the collapsed Record details.
+  # So keep this list to genuine profile signal — record-keeping is intentionally omitted.
+  profiles:
+    actor: [aliases, actor_type, origin_country, motivation, primary_motivation, target_sector,
+            platforms, techniques, signature_techniques, software, related_actors,
+            shared_proprietary_tooling_with, attribution_confidence, activity_tier,
+            distinctiveness_score, news_last_seen, recent_news, recent_news_refs,
+            recent_reports, total_mentions]
+  tab_defs:
+    overview:
+      label: Overview
+      boxes:
+        # Attention first; bounded daily/weekly summary cards follow the live tables.
+        # The "Threat briefs" streams rail remains the full archive by date.
+        - title: Fresh intelligence
+          span: 12
+          view: table
+          dataset: {dir: sources}
+          sort: {field: created, desc: true}
+          limit: 6
+          meta_template: "latest {shown} of {total} ingested sources"
+          columns:
+            - {field: title, label: Latest reporting, link: true, source_title: true}
+            - {field: publisher, label: Publisher, source_publisher: true}
+          empty: "No source reporting has been ingested yet."
+        - title: Actor movement
+          span: 12
+          view: table
+          dataset: {dir: entities, type: actor, has: [recent_news]}   # actors named in recent NEWS
+          sort: {field: news_last_seen, desc: true, require: true, then: recent_news}   # newest NEWS first, ties by volume
+          limit: 5
+          meta_template: "showing {shown} of {total} actors observed in recent reporting"
+          columns:
+            - {field: title, label: Actor, link: true}
+            - label: Assessed origin
+              assessment:
+                kind: actor-country-linkage
+                value_field: assessed_value
+                labels: &country_labels {CN: China, RU: Russia, IR: Iran, KP: North Korea, US: United States,
+                  BY: Belarus, ID: Indonesia, TN: Tunisia, ES: Spain, SY: Syria, MY: Malaysia,
+                  KZ: Kazakhstan, MA: Morocco, TW: Taiwan, RO: Romania, IT: Italy, IQ: Iraq,
+                  AE: United Arab Emirates, AT: Austria, SG: Singapore, DZ: Algeria, KE: Kenya,
+                  LY: Libya, FR: France, EG: Egypt, GB: United Kingdom, PS: Palestine,
+                  UA: Ukraine, VN: Vietnam, TR: Türkiye, IL: Israel, IN: India, PK: Pakistan,
+                  LB: Lebanon, NG: Nigeria, BR: Brazil, KR: South Korea}
+            - {field: news_last_seen, label: Seen, date: true}
+            - {field: recent_news, label: News, tone: crit}
+            - {field: total_mentions, label: Total}
+          empty: "Actor activity ranks after the first actor-activity lane run."
+        - {title: Daily brief, view: doc-summary, section: Summary, dir: briefings, glob: "daily-*", span: 6}
+        - {title: Weekly brief, view: doc-summary, section: "Themes at a glance", dir: briefings, glob: "weekly-*", span: 6}
+    adversaries:
+      label: Adversaries
+      boxes:
+        - title: Roster pulse
+          span: 12
+          view: bignums
+          dataset: {dir: entities, type: actor}
+          # Inline legend for the activity tiers (okengine#259 rec 5) — actor_activity.py sets
+          # activity_tier from recent report-mention volume, so HOT/WARM/COLD read unambiguously
+          # instead of as opaque colour bands. `unsourced` = no sources cited (attribution gap).
+          meta: "HOT = 3+ reports · WARM = 1–2 · COLD = none (report mentions, last ~3y) · unsourced = no sources cited"
+          items:
+            - {label: actors, stat: count}
+            - {label: hot, stat: count, where: {activity_tier: hot}, tone: crit}
+            - {label: warm, stat: count, where: {activity_tier: warm}, tone: warn}
+            - {label: cold, stat: count, where: {activity_tier: cold}, tone: mut}
+            - {label: unsourced, stat: count, dataset: {dir: entities, type: actor, missing: [sources]}, tone: crit}
+            - {label: campaigns, stat: count, dataset: {dir: entities, type: campaign}}
+        - title: Recently active
+          span: 7
+          view: table
+          dataset: {dir: entities, type: actor, has: [recent_news]}   # actors named in recent NEWS
+          sort: {field: news_last_seen, desc: true, require: true, then: recent_news}   # who's in the NEWS now; ties by volume
+          limit: 8
+          meta_template: "showing {shown} of {total} actors named in recent news; Seen = latest report date"
+          columns:
+            - {field: title, label: Actor, link: true}
+            - {field: aliases, label: Aliases, max: 2}
+            - label: Assessed origin
+              assessment:
+                kind: actor-country-linkage
+                value_field: assessed_value
+                labels: *country_labels
+            - {field: news_last_seen, label: Seen, date: true}
+            - {field: recent_news, label: News, tone: crit}
+            - {field: total_mentions, label: Total}
+          empty: "Actor activity ranks after the first actor-activity lane run."
+        - title: Shared malware, offensive tools & LOLBins
+          span: 5
+          view: bars
+          dataset:
+            dir: entities
+            types: [malware, tool]
+            exclude_values: {title: [Net, Ping]}
+          label_field: title
+          value_field: used_by_count
+          limit: 8
+          meta: "ATT&CK software by distinct actor users; common Net/Ping utilities excluded"
+        # Assessment-backed origin rollup: analytical judgments remain visibly distinct from facts,
+        # and actors without a current assessment stay in the explicit Not assessed bucket.
+        - title: Top origins
+          span: 4
+          view: bars
+          dataset: {dir: entities, type: actor}
+          limit: 10
+          assessment:
+            kind: actor-country-linkage
+            value_field: assessed_value
+            labels: *country_labels
+          meta: "actors by assessed origin · uncovered actors shown separately"
+        # aggregation bars over actor attributes — each bar drills to its actors (okengine#189).
+        # group_by explodes list fields (target_sector/techniques), so an actor counts toward each.
+        - title: Targeted sectors
+          span: 4
+          view: bars
+          dataset: {dir: entities, type: actor}
+          group_by: target_sector
+          limit: 10
+          meta: "actors by target sector"
+        - title: Top techniques
+          span: 4
+          view: bars
+          dataset: {dir: entities, type: actor}
+          group_by: techniques
+          # each ATT&CK id IS a page (techniques/…/T####.md, id: T####), so a bar opens the
+          # technique itself; ids with no page fall back to the actors-using-it drilldown.
+          # label_field displays the technique's title ("Ingress Tool Transfer"), not the opaque
+          # id — the id alone is unreadable to anyone without the matrix memorized (okengine#259).
+          link_page: {dir: techniques, by: id, label_field: title}
+          limit: 10
+          meta: "actors by ATT&CK technique"
+        # actor->CVE pivot: which CVEs do tracked actors exploit (direct fields + the
+        # actor->technique->exploits_cve seam, materialized by cve_actor_edge as exploited_cve_ids).
+        # Each bar is a CVE; in a composed vault with cve pages it opens the CVE (label_field shows
+        # its title), else it falls back to the actors-exploiting-it drilldown. okengine#259 rec 8.
+        - title: Exploited CVEs
+          span: 4
+          view: bars
+          dataset: {dir: entities, type: actor}
+          group_by: exploited_cve_ids
+          link_page: {dir: cves, by: cve_id, label_field: title}
+          limit: 10
+          meta: "CVEs exploited by tracked actors"
+    assessments:
+      label: Assessments
+      boxes:
+        - title: Open predictions
+          span: 7
+          view: table
+          dataset: {dir: predictions, type: prediction}
+          sort: {field: resolves_by, desc: false}
+          limit: 8
+          columns:
+            - {field: title, label: Prediction, link: true}
+            - {field: status, label: Status}
+            - {field: confidence, label: Conf, numeric: true}
+            - {field: resolves_by, label: Resolves by, date: true, tone: warn}
+          empty: "0 open forecasts — the okengine.predictions lanes mint candidates from movement and gap fills; the ledger appears when the first land."
+        - title: Knowledge gaps
+          span: 5
+          view: table
+          dataset: {dir: lacuna, type: lacuna}
+          sort: {field: created, desc: true}   # newest gaps first (no sort => arbitrary glob order, new entries buried past limit)
+          limit: 8
+          columns:
+            - {field: title, label: Gap, link: true}
+            - {field: created, label: Found, date: true}
+          empty: "Lacuna stays dormant until the concept graph densifies; gap cards appear with fill proposals."
+        - title: Publisher activity
+          span: 6
+          view: bars
+          dataset: {dir: sources, type: source}
+          group_by: publisher
+          limit: 6
+          meta: "reports in corpus"
+          # corpus-meta: counts how much each publisher REPORTS, not a threat signal (okengine#259)
+          provenance: {label: coverage, note: "How much each source publishes — collection coverage, not a threat measure."}
+
+# legacy import drift -> enum canon (write-path drift normalizer converges these;
+# without them an UPDATE to a drifted page is blocked by the enum check)
+value_aliases:
+  attribution_confidence: {medium: moderate}
+  status: {active-tracking: active}

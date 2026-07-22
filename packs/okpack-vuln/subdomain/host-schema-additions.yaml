@@ -1,0 +1,166 @@
+# okpack-vuln co-install — host-schema ADDITIONS (taxonomy-augmenting shape; docs/authoring-a-pack.md §8).
+# Single-source rule: these types are a SUBSET of the standalone schema.yaml (`cve` only). Host wins on
+# collision. `cve` uses id_authority so it CONVERGES with any host/pack referencing the same CVE — the
+# mechanism that lets an adversary pack's [[cve/…]] links resolve to these pages in one composed vault.
+types:
+  cve:
+    required: [type]
+    id_authority: cve
+    id_field: cve_id
+# legacy STIX/old-name resolution carried into the composed host (okengine#181): a page authored
+# `type: vulnerability` under the legacy monolithic-sec taxonomy drains to `cve`.
+type_aliases:
+  vulnerability: cve
+  vuln: cve
+
+# Field-population coverage corpus_audit tracks (okengine#264) — MUST be declared here (not only in
+# the standalone schema.yaml) so it TRAVELS into a composed/bundle vault via install-domain's
+# merge_coverage_fields. cvss_base/severity come from the engine's shared bounded nvd_import lane
+# (window + --backfill, NVD_PAGE_MODEL=cve),
+# so the KEV backlog can sit un-enriched; floor 0.8 flags a composed CTI vault (okpack-cti) below it.
+coverage_fields:
+  - {type: cve, field: cvss_base, min: 0.8}
+  - {type: cve, field: severity, min: 0.8}
+
+# Field vocabularies corpus_audit's enum-drift metric tracks — MUST travel into a composed/bundle
+# vault via install-domain's merge_enums (okengine#259 rec 12), else drift on cve.severity /
+# exploitation_status reads UNDETECTABLE in the composed deploy though the drift is real. Mirror of the
+# standalone schema.yaml (host wins on any key collision).
+enums:
+  severity: [critical, high, medium, low, none]
+  exploitation_status: [actively-exploited, poc-available, reported, theoretical, unknown]
+field_enums:
+  severity: {enum: severity, extensible: true}
+  exploitation_status: {enum: exploitation_status}
+
+# Cockpit tab this pack contributes to a composed vault (merged by install-domain).
+cockpit:
+  tabs:
+  - vulnerabilities
+  tab_defs:
+    vulnerabilities:
+      label: Vulnerabilities
+      boxes:
+      - title: Exploited-CVE pulse
+        span: 12
+        view: bignums
+        dataset:
+          dir: cves
+          type: cve
+        meta: "unique CVE records in the deployed corpus"
+        items:
+        - label: KEV entries
+          stat: count
+        - label: most-hit vendor
+          stat: top
+          group_by: vendor
+      - title: Remediation deadlines
+        span: 6
+        view: table
+        dataset:
+          dir: cves
+          type: cve
+        sort:
+          field: due_date
+          desc: true
+          require: true
+        limit: 8
+        meta_template: "showing {shown} of {total} CVEs with remediation deadlines"
+        columns:
+        - field: cve_id
+          label: CVE
+          link: true
+        - field: vendor
+          label: Vendor
+        - field: product
+          label: Product
+        # EPSS (probability of exploitation in the next 30d) is stamped on ~all CVE pages by the
+        # epss_import lane — the risk signal a vuln analyst triages by. Severity is CVSS-derived
+        # (nvd_import) and sparse today; it fills in as that enrichment backfills. okengine#259.
+        - field: epss_score
+          label: EPSS
+          pct: true
+        - field: severity
+          label: Sev
+          tone_by: {critical: crit, high: warn, medium: acc, low: mut}
+          empty: "—"
+        - field: due_date
+          label: Due
+          date: true
+          tone: warn
+      - title: Newest additions
+        span: 6
+        view: table
+        dataset:
+          dir: cves
+          type: cve
+        sort:
+          field: date_added
+          desc: true
+          require: true
+        limit: 8
+        meta_template: "showing {shown} of {total} CVEs with KEV addition dates"
+        columns:
+        - field: cve_id
+          label: CVE
+          link: true
+        - field: vendor
+          label: Vendor
+        - field: product
+          label: Product
+        - field: epss_score
+          label: EPSS
+          pct: true
+        - field: severity
+          label: Sev
+          tone_by: {critical: crit, high: warn, medium: acc, low: mut}
+          empty: "—"
+        - field: date_added
+          label: Added
+          date: true
+      - title: Where it hurts
+        span: 6
+        view: bars
+        dataset:
+          dir: cves
+          type: cve
+        group_by: vendor
+        tone: crit
+        limit: 7
+        meta: KEV entries by vendor
+      - title: Top CVEs by reporting
+        span: 12
+        view: bars
+        dataset:
+          dir: cves
+          type: cve
+        label_field: cve_id
+        value_field: report_mentions
+        limit: 12
+        tone: warn
+        meta: CVEs by number of reports mentioning them
+        # corpus-meta: ranks by REPORT ATTENTION, not current exploitation risk (okengine#259) —
+        # famous old CVEs (Log4Shell) rank high here on mention volume, not live risk.
+        provenance: {label: by reporting, note: "Ranked by report mentions — attention/coverage, not current exploitation risk."}
+      # CVE->actor pivot: which tracked actors exploit these CVEs, materialized by okpack-threat-actors'
+      # cve_actor_edge lane as the `exploiting_actors` reverse edge. Each bar is an actor (opens the
+      # actor page; label shows its title). Only populated in a composed vault that also tracks actors
+      # (e.g. the okpack-cti bundle) — empty otherwise. okengine#259 rec 8.
+      - title: Exploited by tracked actors
+        span: 12
+        view: bars
+        dataset:
+          dir: cves
+          type: cve
+        group_by: exploiting_actors
+        link_page: {dir: entities, by: id, label_field: title}
+        limit: 10
+        tone: crit
+        meta: tracked actors ranked by exploited-CVE count
+
+# Standalone-only field_enums deliberately NOT composed into the CTI bundle (okpacks#60 detector). These
+# are VEX / asset-assessment fields on CVE pages — "does this CVE affect YOUR assets, YOUR exposure, YOUR
+# business criticality" — which belong to okpack-vuln's standalone vulnerability-MANAGEMENT use case, not
+# the shared threat-intel bundle (okcti tracks CVEs as intel: KEV/EPSS/exploitation, not asset posture).
+# Listing them here documents the decision so the bundle-compose-check treats the omission as intentional.
+compose_exempt_field_enums: [applicability, asset_exposure, business_criticality]

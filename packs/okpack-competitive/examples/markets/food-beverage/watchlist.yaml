@@ -1,0 +1,11 @@
+# Sample watchlist: FOOD & BEVERAGE. Copy to config/competitive-watchlist.yaml and edit.
+segments:
+  beverage-giants:
+    label: "Beverage majors"
+    competitors: [coca-cola, pepsico, keurig-dr-pepper]
+    axes: {x: "portfolio diversification", y: "energy/functional exposure"}
+  energy-functional:
+    label: "Energy & functional drinks"
+    competitors: [monster-beverage, celsius, red-bull]
+    axes: {x: "distribution reach", y: "brand momentum"}
+watch_signals: [pricing, launch, funding, hire, partnership, acquisition]

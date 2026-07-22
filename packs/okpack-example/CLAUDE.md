@@ -1,0 +1,95 @@
+# okpack-example — example knowledge vault: persona & curation rules
+
+This is the guidance the engine's cron agents read at runtime (`$WIKI_PATH/CLAUDE.md`).
+It is the *domain voice + ingest/curation workflow* for **okpack-example** — distinct from the
+engine repo's dev/ops docs. The machine-readable contract is `schema.yaml` (types,
+partitioning, hot_set, permissions, review, tier); this file is the human judgment that
+fills it.
+
+## Mission
+
+> TODO: one paragraph — what compounding knowledge vault is this maintaining, ingesting
+> from what sources, to answer what questions for whom? Keep it concrete.
+
+Maintain a compounding, agent-curated knowledge vault for example knowledge vault: ingest open
+example sources and compile them into a durable, cross-linked graph of <your core
+entity types> — so a reader can answer the domain's key questions from the vault
+instead of re-reading the feed.
+
+## Positioning
+
+- **Filter, not feed.** Most feed items are noise or restate known facts. Compress
+  signal into structured pages; do not mirror the feed. A source with nothing new gets
+  a thin source page (for the dedupe/provenance trail) and no new entities.
+- **Compounding KB, not RAG.** Compile once into entities and *maintain* them over time
+  (new sightings append to an entity, not a new page).
+- **Audience:** > TODO: name the expert reader. Assume expertise — skip 101
+  explanations; capture the specific, actionable detail.
+
+## Staged ingest workflow (sources, then entities)
+
+Process each raw item in the digest IN ORDER. Read `schema.yaml` for the exact required
+fields per type. Source compilation and entity extraction are separate lanes: the source
+lane stops after writing a complete accepted source, and the downstream entity lane consumes
+only accepted source pages. The source lane must not create or update entities, concepts,
+predictions, findings, or briefings.
+
+1. **Source page first (dedupe + provenance).** Create `wiki/sources/<YYYY>/<MM>/<slug>.md`
+   (`type: source`). Set **`raw:`** to the exact raw path — this is the dedupe key. Set
+   `publisher`, `published`, `url`, and your `source_kind`.
+2. **Score every source.**
+   > TODO: define your source-quality rubric. okpack-cti uses Admiralty
+   > `reliability` (A–F, the channel) + `credibility` (1–6, the claim) + `tlp` +
+   > `bias_flags`. Adapt to your domain's notion of trust, or simplify to a single
+   > `confidence`. Add the scoring fields to `source.required` in schema.yaml if you
+   > want the gate to enforce them.
+3. **Stop the source lane.** A complete, deduplicated source is the only accepted canonical
+   output from raw ingestion. If compilation is incomplete, defer or fail the raw item instead
+   of writing a partial or empty source. Account for every selected input in the exact receipt
+   format supplied by the selector.
+4. **Extract entities downstream** (under `wiki/entities/`, bucketed by type), only after
+   the source was accepted. Every created or enriched entity must cite a resolving source page
+   using the exact source slug read from the digest or vault. Create an entity
+   when it is **worth tracking over time**; skip one-off mentions.
+   > TODO: list your domain entity types + the identity field each needs (mirror
+   > schema.yaml `types`).
+5. **Cross-link.** Link related entities with `[[wikilinks]]` — only to pages that exist
+   or you create in this batch. The graph is the value.
+6. **Update, don't duplicate.** A new sighting of an existing entity appends to its
+   `## Recent activity` and bumps `updated:` + adds the new source to `sources:` —
+   never a second page for the same entity.
+7. **Findings are HUMAN-AUTHORED.** You may *surface* candidate findings in your run
+   summary, but you must NOT create or edit `wiki/findings/` pages (`schema.yaml`
+   `permissions.findings` is human-only — the write path refuses it).
+   > TODO: delete this rule if your domain has no human-only gate.
+8. **File predictions only in the prediction lane** for explicit, falsifiable, dated forward claims a source makes.
+   No falsifiable claim → file none. Never invent one.
+
+## Predictions
+
+`type: prediction` requires `status` (open|confirmed|refuted|partial|expired-ungraded),
+`confidence` (0.0–1.0), `subject` (`[[entity/...]]`), `resolves_by` (date). Every
+prediction MUST have a `## What would refute this` section — refuse to file without it.
+
+## Confidence trust model (G3 — flag, not gate)
+
+Assert a **numeric** `confidence` (0.0–1.0) or `low`/`medium`/`high` freely. The
+categorical verdicts in `schema.yaml` `review.confidence_review_values` are
+review-flagged: asserting one lands the write but stamps `needs_review: true`.
+
+## Write discipline
+
+- Write via the **enforced MCP write path** (`create_entity` / `update_entity` /
+  `patch_entity` / `append_to_section`), not raw `file_write`. Each validates against
+  `schema.yaml` and logs to `wiki/log.md`.
+- **Never delete a knowledge page** — `tombstone_entity` (retains the file as
+  `status: tombstoned`). Dedup/merge = tombstone the loser with `superseded_by`.
+- Keep required fields present (the gate rejects non-conformant writes).
+- Respect any TLP / sensitivity convention your domain uses.
+
+## Domain pointers
+
+- **Taxonomy:** the `types` in `schema.yaml`.
+- **Standards:** > TODO: list the canonical external IDs/standards your domain anchors
+  on (e.g. an ID scheme, a grading system, a classification).
+- **Concepts** capture cross-cutting patterns that group many entities.

@@ -1,0 +1,62 @@
+image: python:3.12-slim
+
+stages: [validate, integration, conformance, audit]
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+cache:
+  paths: [.cache/pip/]
+
+validate-packs:
+  stage: validate
+  variables:
+    GIT_DEPTH: "0"   # check_version_bumps.py (okpacks#29) reads full git history for R1/R3
+  before_script:
+    - python -m pip install --disable-pip-version-check -r requirements.txt
+    - apt-get update -qq && apt-get install -y -qq --no-install-recommends git
+    # Wire in the engine so validate-all.sh runs the engine-dependent checks (cron-script existence,
+    # base-schema enum/type composition, engine-currency) instead of silently SKIPping them — parity
+    # with the private repo (okpacks#59). Clone the engine default branch: its engine_release is the
+    # same series the catalog targets (so the currency check passes), and it has ALL engine cron
+    # scripts present (pinning an older tag would false-FAIL a pack cron that references a
+    # post-release engine lane — the nvd_import "dead lane" trap).
+    - git clone --depth 1 "${CI_SERVER_PROTOCOL}://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/jlew/okengine.git" /tmp/okengine
+  script:
+    - ENGINE_DIR=/tmp/okengine OKENGINE_DIR=/tmp/okengine OKENGINE_BASE=/tmp/okengine/config/base-schema.yaml bash scripts/validate-all.sh
+
+compose-integration:
+  stage: integration
+  before_script:
+    - python -m pip install --disable-pip-version-check -r requirements.txt
+    - apt-get update -qq && apt-get install -y -qq --no-install-recommends git
+    # actually ASSEMBLE the bundle against the engine (not a static recipe check) — okengine#281.
+    - git clone --depth 1 "${CI_SERVER_PROTOCOL}://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/jlew/okengine.git" /tmp/okengine
+  script:
+    - ENGINE_DIR=/tmp/okengine bash scripts/bundle-compose-check.sh
+
+conformance:
+  stage: conformance
+  before_script:
+    - python -m pip install --disable-pip-version-check -r requirements-dev.txt
+  script:
+    - bash scripts/conformance-all.sh --strict
+
+security-audit:
+  stage: audit
+  before_script:
+    - python -m pip install --disable-pip-version-check -r requirements-dev.txt
+  script:
+    - bash scripts/audit.sh
+
+# Secret scan (okengine#280) — bandit/pip-audit don't catch a committed credential; gitleaks does.
+# Pinned binary; any finding fails. Clean today, so no baseline. Parity job across all three repos.
+secret-scan:
+  stage: audit
+  variables:
+    GITLEAKS_VERSION: "8.21.2"
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq --no-install-recommends curl
+  script:
+    - curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" | tar xz gitleaks
+    - ./gitleaks dir . --no-banner --redact --exit-code 1

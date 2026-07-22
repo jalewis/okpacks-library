@@ -1,0 +1,126 @@
+[
+  {
+    "id": "f2a9c1e7b4d3",
+    "name": "okpack-threat-landscape-annual-reports",
+    "enabled": true,
+    "_note": "THE seed. Full-TEXT ingest of ALL categories of the awesome-annual-security-reports corpus (MIT) -> source pages stamped with an inferred report_theme + vendor. Default: fetch from PUBLIC GitHub, bounded (recent years + cap 120). Operator override: set ANNUAL_REPORTS_DIR in .env to a local checkout. no_agent for the import (zero-token) — large source pages, so the trend/metric AGENT lanes spend when compiling. See docs/data-sources.md.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "7 12 * * 1"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Ingest annual security reports (all categories, full text, themed). Pure script, wakeAgent=false, ZERO LLM tokens for the import. Runs FIRST in the weekly chain (Mon 12:07, before the hour-13 analysis lanes) so theme-trends/vendor-index/landscape-shifts see the fresh import same-week — NOT @jitter (independent jitter made the import land after the analysis, so new reports lagged a week).",
+    "script": "/opt/data/scripts/landscape_reports_import.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "a3d7f2b9e1c6",
+    "name": "okpack-threat-landscape-theme-trends",
+    "enabled": true,
+    "_note": "Cross-report THEME emergence: counts reports per report_theme per year -> rising/fading trend pages (the landscape analog of TTP-diffusion). Reads the report_theme+year frontmatter the ingest stamps. no_agent, ZERO LLM tokens.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Synthesize theme-emergence trends across the report corpus. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/theme_trends.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "477a5f18384c",
+    "name": "okpack-threat-landscape-theme-news-velocity",
+    "enabled": true,
+    "_note": "Per-theme NEWS velocity: counts recent security-news sources (the deployment's raw news drop) whose text matches each theme, this window vs prior, and grafts a news_velocity block onto trends/theme-*.md — PRESERVING theme_trends' annual-report count_by_year. DAILY so the signal tracks the news, not the annual-report cadence. no_agent, ZERO LLM tokens.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:daily"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Graft per-theme news velocity onto the theme trend pages. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/theme_news_velocity.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "b8e4c2a1f7d9",
+    "name": "okpack-threat-landscape-vendor-index",
+    "enabled": true,
+    "_note": "Builds a publisher page per report publisher (report count, themes, years, links) — the who-says-what-about-what map. no_agent, ZERO LLM tokens.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Build the publisher coverage map from the report corpus. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/vendor_index.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "c5f1a8d3b2e7",
+    "name": "okpack-threat-landscape-feed-fetch",
+    "enabled": true,
+    "_note": "Optional ongoing signal (empty by default; ZERO upstream calls until you populate feeds.opml). The annual reports are the primary source. @jitter:2h expanded to a random minute at install.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:2h"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "okpack-threat-landscape feed pull: fetch the threat-landscape OPML into raw/threat-landscape/ for the ingest lane. Pure script, wakeAgent=false.",
+    "script": "/opt/data/scripts/okpack_threat_landscape_feed_fetch.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "d9b2e5c8a3f4",
+    "name": "okpack-threat-landscape-weekly-brief",
+    "enabled": true,
+    "output_contract": {
+      "api": 1,
+      "allowed_namespaces": ["briefings"],
+      "allowed_types": ["briefing"],
+      "operations": ["create", "update"],
+      "required_fields": ["type", "title", "published", "updated"],
+      "required_relationships": [],
+      "body": {"required": true, "min_non_whitespace": 200},
+      "unknown_fields": "reject",
+      "unresolved_links": "reject",
+      "placeholder_links": "reject",
+      "completion": "run"
+    },
+    "adversarial_fixtures": ["tests/test_model_output_contracts.py"],
+    "_note": "Agent lane. Synthesizes the week's landscape brief from recent trends + reports. Spends model tokens. Writes briefings/weekly-<date>.md. Runs LAST in the weekly chain (Mon 15:20, after landscape-shifts at 14:45) so the brief reflects the day's computed shifts — NOT @jitter (it kept landing before the shifts).",
+    "schedule": {
+      "kind": "cron",
+      "expr": "20 15 * * 1"
+    },
+    "workdir": "/opt/vault",
+    "enabled_toolsets": [
+      "file",
+      "todo",
+      "skills",
+      "delegation",
+      "okengine-write",
+      "okengine"
+    ],
+    "prompt": "Weekly threat-landscape brief. FIRST, two tool calls: file_read wiki/HOT.md, then file_read the wiki/trends/theme-*.md pages. Each theme page carries BOTH an annual-report `count_by_year` (slow structural coverage) and a `news_velocity` block (recent security-news source count THIS 7-day window vs the prior 7 days, with direction + per-day rate). Write the brief via mcp_okengine_write_create_entity (the enforced write path — never file_write) to \"briefings/weekly-<YYYY-MM-DD>.md\" (frontmatter: type: briefing, title, published: <TODAY YYYY-MM-DD>, updated: <TODAY> — use TODAY's real date, not a guess). Immediately below the H1, add a `## Themes at a glance` section of 3-5 terse bullets that summarizes the complete ranked field: identify the highest-volume theme, group the rising themes, group the flat but persistent themes, and identify any cooling theme. Every tracked theme must be named once across those bullets and linked as `[[trends/theme-...]]`; keep this section interpretive and do not repeat source-level detail. After that summary, give the news-pulse window and the full `## News Pulse (ranked)` section: rank the themes by news_velocity this week (highest /day first), call out which are RISING or COOLING vs the prior week, then note where the slow annual-report backdrop DIVERGES from the news (a theme flat in vendor reports but hot in news volume, or vice versa — the divergence IS the finding). Each ranked theme gets 2-3 sentences with [[trends/theme-...]] wikilinks. Where vendors disagree on a metric, say so (the range is the finding). Expert-grade, terse; skip 101 explanation. LOCAL-ONLY: do not use web tools.",
+    "deliver": "local"
+  },
+  {
+    "id": "8c2f19d4ab07",
+    "name": "okpack-threat-landscape-landscape-shifts",
+    "enabled": true,
+    "schedule": {
+      "kind": "cron",
+      "expr": "45 14 * * 1"
+    },
+    "workdir": "/opt/vault",
+    "deliver": "local",
+    "script": "/opt/data/scripts/landscape_shifts.py",
+    "no_agent": true,
+    "prompt": "Weekly dated landscape-shift digest (Mon 14:45 local, after theme-trends refreshes): diffs trends/theme-* metrics vs the previous shift snapshot and writes trends/shift-YYYY-MM-DD.md for the cockpit's date-keyed shifts stream. Pure script, wakeAgent=false."
+  }
+]
