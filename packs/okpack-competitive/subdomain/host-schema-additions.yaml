@@ -1,0 +1,13 @@
+# okpack-competitive co-install — host-schema ADDITIONS (taxonomy-augmenting shape;
+# engine docs/authoring-a-pack.md §8). Host wins on collision — verify required-field
+# compatibility instead of overwriting. Watchlist config merges by SEGMENT KEY (segments are id-keyed); collisions loud.
+# Host-REUSABLE types (do NOT add if the host declares them): deal, product, segment
+types:
+  competitor:
+    owner: okpack-competitive
+    required:
+    - type
+  signal:
+    owner: okpack-competitive
+    required:
+    - type

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- okpack-ai-research ACTIVE feed sources — EMPTY BY DEFAULT (herd-safe: a fresh clone
+     fetches nothing). Copy entries from feeds.opml.example to opt in (review each first),
+     keep the schedule jittered. Emptied 2026-07-03: shipping active feeds pointed every
+     deployment at the same origins at once (the safe_feeds readiness dimension). -->
+<opml version="2.0">
+  <head><title>okpack-ai-research feeds (none enabled)</title></head>
+  <body>
+  </body>
+</opml>

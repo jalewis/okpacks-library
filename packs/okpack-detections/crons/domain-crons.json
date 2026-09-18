@@ -1,0 +1,47 @@
+[
+  {
+    "id": "a1514b0922c6",
+    "name": "okpack-detections-feed-fetch",
+    "enabled": true,
+    "_note": "Enabled by default but HARMLESS until you populate feeds.opml: feed-fetch runs on schedule and makes ZERO upstream calls while the feed list is empty (it logs a clean 'no feeds' no-op). Populate feeds/feeds.opml to start ingesting. The `@jitter:2h` schedule is expanded to a concrete cron with a RANDOM minute at install (framework init/pull), so installs don't synchronize once feeds are live.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "32 */2 * * *"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "okpack-detections feed pull: fetch the detections OPML into raw/detections/ for the ingest lane. Pure script, wakeAgent=false.",
+    "script": "/opt/data/scripts/okpack_detections_feed_fetch.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "e7b3f10a94c2",
+    "name": "okpack-detections-sigma-import",
+    "enabled": true,
+    "_note": "THE seed. Pulls the open SigmaHQ ruleset (DRL-1.1) into detections/ — one detection page per rule with its ATT&CK covers_techniques as [[technique]] links (the detection-coverage seam). BOUNDED (SIGMA_LIMIT default 60; 1 GitHub API call + raw CDN fetches). no_agent, ZERO LLM tokens, MERGE-safe. Set GITHUB_TOKEN to lift the API limit.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Seed detection rules from SigmaHQ. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/sigma_import.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "b8e4a1f70c93",
+    "name": "okpack-detections-attack-mitigations",
+    "enabled": true,
+    "_note": "Seeds one course-of-action page per ATT&CK mitigation (M####) from the public ATT&CK STIX (Enterprise+Mobile+ICS), wiring `mitigates` -> [[T####]] technique links (the mitigate side of the coverage map; the detect side is sigma_import). no_agent, ZERO LLM tokens, MERGE-safe. ATT&CK changes a few times a year -> weekly.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Seed ATT&CK mitigations as course-of-action pages. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/attack_mitigations_import.py",
+    "deliver": "local",
+    "no_agent": true
+  }
+]

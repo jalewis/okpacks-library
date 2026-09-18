@@ -1,0 +1,11 @@
+# Sample watchlist: PHARMA. Copy to config/competitive-watchlist.yaml and edit.
+segments:
+  large-cap-pharma:
+    label: "Large-cap pharma"
+    competitors: [pfizer, merck, novartis, eli-lilly, astrazeneca]
+    axes: {x: "pipeline depth", y: "patent-cliff exposure"}
+  obesity-metabolic:
+    label: "Obesity / metabolic franchise"
+    competitors: [novo-nordisk, eli-lilly]
+    axes: {x: "manufacturing scale", y: "next-gen pipeline"}
+watch_signals: [pricing, launch, funding, hire, partnership, acquisition]

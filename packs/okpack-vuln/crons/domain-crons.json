@@ -1,0 +1,119 @@
+[
+  {
+    "id": "b1e7f3a92c6d",
+    "name": "okpack-vuln-kev-import",
+    "enabled": true,
+    "_note": "THE seed. Pulls the CISA Known Exploited Vulnerabilities catalog (~1200 actively-exploited CVEs) into cves/ \u2014 one canonical page per CVE. no_agent, ZERO LLM tokens. MERGE-writes. KEV updates near-daily, so daily/every-few-hours would also be reasonable; weekly is the conservative default.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Seed actively-exploited CVEs from the CISA KEV catalog. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/kev_import.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "dddbb85b3c0e",
+    "name": "okpack-vuln-feed-fetch",
+    "enabled": true,
+    "_note": "Enabled by default but HARMLESS until you populate feeds.opml (ships empty; ZERO upstream calls until you opt in). Optional ongoing advisory signal on top of the KEV seed. The @jitter:2h schedule is expanded to a random minute at install.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:2h"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "okpack-vuln feed pull: fetch the vuln OPML into raw/vuln/ for the ingest lane. Pure script, wakeAgent=false.",
+    "script": "/opt/data/scripts/okpack_vuln_feed_fetch.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "c2f8a4d19e7b",
+    "name": "okpack-vuln-nvd-import",
+    "enabled": true,
+    "_note": "Enriches EXISTING cve/ pages (from KEV) with authoritative CVSS + CWE from the NVD 2.0 API. BOUNDED (CVEs modified in the last 7 days) and ENRICH-ONLY by default \u2014 creates no new pages, keeping the vault KEV-curated (actively-exploited focus). `--stub-new` opts into HIGH/CRITICAL discovery. no_agent, ZERO LLM tokens, MERGE-safe. Set NVD_API_KEY to lift the anon rate limit.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:daily"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Enrich CVE pages with CVSS/CWE from NVD. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/nvd_import.py",
+    "env": {
+      "NVD_PAGE_MODEL": "cve"
+    },
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "e9d4b7a20c5f",
+    "name": "okpack-vuln-epss-import",
+    "enabled": true,
+    "_note": "EPSS exploit-prediction enrichment (FIRST.org daily CSV, free with attribution). Stamps score, percentile, observation date, 7/30-day movement, and first threshold crossing onto EXISTING CVEs; retains 45 days of runtime history; writes dashboards/epss-watch.md; and reports freshness/failure to the collection ledger. no_agent, ZERO LLM tokens, MERGE-safe.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "11 8 * * *"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Stamp EPSS scores on cve pages and rebuild dashboards/epss-watch.md. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/epss_import.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "f0a5c8d31b72",
+    "name": "okpack-vuln-osv-import",
+    "enabled": true,
+    "_note": "Enriches existing CVE pages with OSV package, PURL, affected/fixed version, alias, withdrawal, and revision evidence. Raw upstream revisions are retained immutably outside wiki; ambiguous aliases are flagged and never auto-merged. Bounded concurrency keeps a full tracked-corpus refresh inside the cron timeout; retries with backoff, request pacing, checkpoints, and collection-ledger telemetry are built in. no_agent, ZERO LLM tokens.",
+    "schedule": {"kind": "cron", "expr": "17 9 * * *"},
+    "workdir": "/opt/vault",
+    "prompt": "Enrich existing CVEs from OSV and retain advisory revision history. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/osv_import.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "a3e72d9c4f10",
+    "name": "okpack-vuln-action-queue",
+    "enabled": true,
+    "_note": "Builds the explainable vulnerability action queue after KEV, EPSS, OSV, and any composed private exposure/VEX overlays. Every contributing factor and unknown/stale input remains visible. no_agent, ZERO LLM tokens.",
+    "schedule": {"kind": "cron", "expr": "47 10 * * *"},
+    "workdir": "/opt/vault",
+    "prompt": "Rebuild the transparent vulnerability action queue. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/vulnerability_action_queue.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "a7c3e91f52d8",
+    "name": "okpack-vuln-cve-mentions",
+    "enabled": true,
+    "_note": "CVE 'in the news' signal: counts how many source/briefing docs mention each CVE ID in prose and stamps report_mentions + recent_report_mentions onto the cves/ pages, feeding the Vulnerabilities tab's 'Top CVEs by reporting' ranking. no_agent, ZERO LLM tokens, MERGE-safe, idempotent. Daily tracks fresh reporting.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:daily"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Tally CVE mentions across reporting and stamp report_mentions on cve pages. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/cve_mentions.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "d3b9f1a7c024",
+    "name": "okpack-vuln-severity-normalize",
+    "enabled": true,
+    "_note": "Self-heals agent-authored free-text `severity` to the canonical CVSS band (e.g. 'critical (unauthenticated RCE exploit)' -> 'critical') when exactly one band token is present; ambiguous values are left for corpus_audit. Avoids a strict-enum hard-reject dropping the page. no_agent, ZERO LLM tokens, MERGE-safe, idempotent.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:daily"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Normalize free-text severity values to the canonical band. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/severity_normalize.py",
+    "deliver": "local",
+    "no_agent": true
+  }
+]

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Sample market: DATA INFRASTRUCTURE (warehouses, lakes, OLTP/OLAP engines).
+     All URLs verified live 2026-07-01. -->
+<opml version="2.0">
+  <head><title>data-infrastructure market — sample feeds</title></head>
+  <body>
+    <outline text="Snowflake blog"  type="rss" xmlUrl="https://www.snowflake.com/feed/"/>
+    <outline text="Databricks blog" type="rss" xmlUrl="https://www.databricks.com/feed"/>
+    <outline text="MongoDB blog"    type="rss" xmlUrl="https://www.mongodb.com/blog/rss"/>
+    <outline text="ClickHouse blog" type="rss" xmlUrl="https://clickhouse.com/rss.xml"/>
+    <outline text="Neon blog"       type="rss" xmlUrl="https://neon.tech/blog/rss.xml"/>
+  </body>
+</opml>

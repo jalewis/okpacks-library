@@ -1,0 +1,57 @@
+# Completeness expectations for okpack-vendor-risk (read by okengine.completeness).
+# Each rule = a declared expectation around a type; unmet -> an explainable gap page
+# + the dashboards/completeness queue. Rules default fix: human; only mechanical,
+# evidence-preserving fixes are marked agent/agent-draft.
+rules:
+  - id: incident-needs-date
+    title: "Incident without a date"
+    when: {type: incident}
+    expect: field
+    field: date
+    severity: high
+    fix: agent-draft
+    resolution_hint: "Date the event from its cited sources; an undated incident never reaches the ledger or the recency driver."
+
+  - id: incident-needs-vendor-link
+    title: "Incident not linked to a vendor"
+    when: {type: incident}
+    expect: link
+    link: {type: vendor}
+    severity: high
+    fix: agent-draft
+    resolution_hint: "Wikilink the supplying organization; an unlinked incident is invisible to the ranking."
+
+  - id: incident-needs-citations
+    title: "Incident without source citations"
+    when: {type: incident}
+    expect: field
+    field: sources
+    severity: high
+    resolution_hint: "Sanctions/litigation/distress claims must carry independent cited sources before they may move a ranking."
+
+  - id: vendor-needs-aliases-review
+    title: "Vendor page never reviewed for aliases"
+    when: {type: vendor}
+    expect: freshness
+    field: last_reviewed
+    max_age_days: 180
+    severity: medium
+    resolution_hint: "Re-check feed spellings and the aliases: list; the ranking folds evidence only by declared aliases."
+
+  - id: component-needs-supplier
+    title: "Component without a supplied_by vendor"
+    when: {type: component}
+    expect: field
+    field: supplied_by
+    severity: medium
+    fix: agent-draft
+    resolution_hint: "Name the supplying vendor; the dependency chain is typed links until a dependency-map lane exists."
+
+  - id: contract-renewal-freshness
+    title: "Contract not reviewed ahead of renewal"
+    when: {type: contract}
+    expect: freshness
+    field: last_reviewed
+    max_age_days: 365
+    severity: medium
+    resolution_hint: "Operator action: contracts/ is human-authored — review criticality + renewal_date yearly."

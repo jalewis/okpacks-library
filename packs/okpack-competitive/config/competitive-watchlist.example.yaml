@@ -1,0 +1,12 @@
+# EXAMPLE watchlist — segments → competitors (entity slugs under entities/) + the two axes to plot.
+# Copy to config/competitive-watchlist.yaml (gitignored) and fill with YOUR segments/competitors. Placeholders
+# only — the real watchlist is deployment config, never committed. okengine.competitive-analytics
+# reads it via WATCHLIST_PATH.
+# home: your-company-slug   # OPTIONAL — your company's entity slug; anchors discover-competitors
+#                            # co-occurrence (companies seen alongside you become candidates).
+segments:
+  core-platform:
+    label: "Core platform"
+    competitors: [example-rival-a, example-rival-b]   # entity slugs under entities/
+    axes: {x: "feature breadth", y: "price"}
+watch_signals: [pricing, launch, funding, hire, partnership, acquisition]

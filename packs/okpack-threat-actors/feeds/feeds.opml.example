@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- okpack-threat-actors SUGGESTED feed sources — public CTI RSS+Atom feeds.
+     DISABLED BY DEFAULT: a suggestion list, not active config. Copy the ones you want into
+     feeds/feeds.opml to opt in — see README §"Enabling data sources". Shipping sources active
+     would point every deployment at the same origins at once (a thundering herd); opt in
+     deliberately and jitter your schedule.
+     These are ONGOING SIGNAL on top of the static ATT&CK + MISP-galaxy graph the bulk importers
+     seed — new campaigns/TTPs before MITRE catalogs them. Consumed by the engine's generic
+     feed_fetch.py -> raw/threat-actors/ -> the ingest cron compiles into wiki/ (source pages
+     linked to the seeded actors/malware/techniques). Grouped by source TYPE; per-source quality
+     (reliability/credibility/tlp) is assigned at ingest. Re-probe them with the validate.py probe flag.
+     All 18 probed live (HTTP 200): 2026-07-05. -->
+<opml version="2.0">
+  <head><title>Threat-Actor / Adversary Tracking feeds</title></head>
+  <body>
+    <outline text="Government / national CERTs">
+      <outline text="CISA Cybersecurity Advisories" type="rss" xmlUrl="https://www.cisa.gov/cybersecurity-advisories/all.xml"/>
+      <outline text="NCSC UK" type="rss" xmlUrl="https://www.ncsc.gov.uk/api/1/services/v1/all-rss-feed.xml"/>
+    </outline>
+    <outline text="Vendor threat research">
+      <outline text="Cisco Talos" type="rss" xmlUrl="https://blog.talosintelligence.com/rss/"/>
+      <outline text="Palo Alto Unit 42" type="rss" xmlUrl="https://unit42.paloaltonetworks.com/feed/"/>
+      <outline text="Microsoft Security Blog" type="rss" xmlUrl="https://www.microsoft.com/en-us/security/blog/feed/"/>
+      <outline text="Google Cloud Threat Intelligence (Mandiant)" type="rss" xmlUrl="https://cloud.google.com/blog/topics/threat-intelligence/rss"/>
+      <outline text="CrowdStrike" type="rss" xmlUrl="https://www.crowdstrike.com/blog/feed/"/>
+      <outline text="ESET WeLiveSecurity" type="rss" xmlUrl="https://www.welivesecurity.com/en/rss/feed/"/>
+      <outline text="Kaspersky Securelist" type="rss" xmlUrl="https://securelist.com/feed/"/>
+      <outline text="Check Point Research" type="rss" xmlUrl="https://research.checkpoint.com/feed/"/>
+      <outline text="Sekoia.io" type="rss" xmlUrl="https://blog.sekoia.io/feed/"/>
+      <outline text="SentinelOne Labs" type="rss" xmlUrl="https://www.sentinelone.com/labs/feed/"/>
+      <outline text="Volexity" type="rss" xmlUrl="https://www.volexity.com/blog/feed/"/>
+    </outline>
+    <outline text="Incident / malware analysis">
+      <outline text="The DFIR Report" type="rss" xmlUrl="https://thedfirreport.com/feed/"/>
+      <outline text="Red Canary" type="rss" xmlUrl="https://redcanary.com/blog/feed/"/>
+      <outline text="Malwarebytes Labs" type="rss" xmlUrl="https://www.malwarebytes.com/blog/feed/index.xml"/>
+    </outline>
+    <outline text="News / practitioner">
+      <outline text="BleepingComputer" type="rss" xmlUrl="https://www.bleepingcomputer.com/feed/"/>
+      <outline text="The Hacker News" type="rss" xmlUrl="https://feeds.feedburner.com/TheHackersNews"/>
+    </outline>
+  </body>
+</opml>

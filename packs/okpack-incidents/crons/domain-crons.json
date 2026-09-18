@@ -1,0 +1,44 @@
+[
+  {
+    "id": "384bfcc204c9",
+    "name": "okpack-incidents-feed-fetch",
+    "enabled": true,
+    "_note": "Enabled by default but HARMLESS until you populate feeds.opml: feed-fetch runs on schedule and makes ZERO upstream calls while the feed list is empty (it logs a clean 'no feeds' no-op). Populate feeds/feeds.opml to start ingesting. The `@jitter:2h` schedule is expanded to a concrete cron with a RANDOM minute at install (framework init/pull), so installs don't synchronize once feeds are live.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "6 */2 * * *"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "okpack-incidents feed pull: fetch the incidents OPML into raw/incidents/ for the ingest lane. Pure script, wakeAgent=false.",
+    "script": "/opt/data/scripts/okpack_incidents_feed_fetch.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "f5c8b21e63a4",
+    "name": "okpack-incidents-vcdb-import",
+    "enabled": true,
+    "_note": "THE seed. Pulls the open VERIS Community Database (CC BY-SA 4.0) into incidents/ — one page per validated breach/intrusion, plus an identity page per victim org. BOUNDED (newest VCDB_LIMIT default 80; 1 GitHub API call + raw CDN fetches). no_agent, ZERO LLM tokens, MERGE-safe. Set GITHUB_TOKEN to lift the API limit.",
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Seed security incidents from the VERIS Community Database. Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/vcdb_import.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "9d506608a650",
+    "name": "okpack-incidents-sector-normalize",
+    "enabled": true,
+    "_note": "Backfills two-digit NAICS sector labels on the historical incident corpus.",
+    "schedule": {"kind": "cron", "expr": "@jitter:daily"},
+    "workdir": "/opt/vault",
+    "prompt": "Normalize incident industry codes into human-readable NAICS sectors. Pure script, wakeAgent=false.",
+    "script": "/opt/data/scripts/incident_sector_normalize.py",
+    "deliver": "local",
+    "no_agent": true
+  }
+]

@@ -1,0 +1,28 @@
+# okpack-vendor-risk — taxonomy-augmenting co-install form (docs/authoring-a-pack.md §8).
+# DERIVED from this pack's schema.yaml (single-source rule: strict subset, identical
+# required fields — framework validate enforces it). `framework install-domain
+# <deployment> <pack> --apply` merges these into the HOST schema. product /
+# vulnerability / incident are deliberately absent: the pack uses but never owns
+# them (okpack-competitive / okpack-cti do); a host lacking them still accepts the
+# pages via strict_types: false + this pack's completeness rules.
+types:
+  vendor:
+    required:
+    - type
+    - name
+    owner: okpack-vendor-risk
+  component:
+    required:
+    - type
+    - name
+    owner: okpack-vendor-risk
+  contract:
+    required:
+    - type
+    - vendor
+    owner: okpack-vendor-risk
+  location:
+    required:
+    - type
+    - name
+    owner: okpack-vendor-risk

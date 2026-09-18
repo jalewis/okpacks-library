@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Sample market: ENERGY DRINKS (framed for a NEW ENTRANT). Beverage trade press;
+     energy is the hottest CPG beverage segment so the coverage volume is high.
+     All URLs verified live 2026-07-01. -->
+<opml version="2.0">
+  <head><title>energy-drinks market — sample feeds</title></head>
+  <body>
+    <outline text="BevNET"      type="rss" xmlUrl="https://www.bevnet.com/feed/"/>
+    <outline text="Food Dive"   type="rss" xmlUrl="https://www.fooddive.com/feeds/news/"/>
+    <outline text="Just Drinks" type="rss" xmlUrl="https://www.just-drinks.com/feed/"/>
+    <outline text="Food Business News" type="rss" xmlUrl="https://www.foodbusinessnews.net/rss/topic/84"/>
+  </body>
+</opml>

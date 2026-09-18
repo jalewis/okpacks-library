@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- okpack-ai-research SUGGESTED feed sources.
+     DISABLED BY DEFAULT: a suggestion list, not active config. Copy the ones you want into
+     feeds/feeds.opml to opt in — see README §"Going live: populate the feed list". Shipping
+     sources active would point every deployment at the same origins at once (a thundering
+     herd); opt in deliberately and jitter your schedule. Consumed by the engine's generic
+     feed_fetch.py -> raw/ -> the ingest cron compiles into wiki/.
+
+     ── WHICH GROUP TO ENABLE ────────────────────────────────────────────────────────────
+     RSS is the FALLBACK collection surface for this pack, not the primary one. A deployment
+     with a news-aggregation connector (okengine.inquiry + a source connector, okengine#746)
+     already receives most of this material, deduplicated and full-text searchable, without
+     polling anything.
+
+       GAP FEEDS         — publishers an aggregator typically carries thinly or not at all.
+                           Enable these EVEN IF you have an aggregator.
+       BROAD COVERAGE    — publishers a mainstream aggregator carries deeply. Enable these
+                           ONLY IF you have no aggregator; with one they are redundant
+                           polling.
+
+     The split is measured, not guessed. Coverage counts below are indexed-article totals from
+     one deployment's aggregator on 2026-09-12, and the boundary is 100 articles. Re-measure
+     against your own before trusting the grouping — a different aggregator indexes different
+     publishers.
+
+     NO DISCOVERABLE FEED (probed 2026-09-11, all 404 or non-feed): Anthropic, Epoch AI,
+     Apollo Research, UK AI Security Institute, GovAI, Meta AI, Allen Institute for AI,
+     Mistral, Stanford HAI, Brookings. These need an okengine.source_connector rather than a
+     feed (okengine#201). Several ARE present in an aggregator despite having no feed, which
+     is the clearest argument for preferring one.
+
+     DROPPED 2026-09-12: Berkeley AI Research (bair.berkeley.edu) — the feed times out on
+     repeated 30s probes and has been shipping dead in this list. the validate.py probe flag only
+     WARNS on unreachable, so CI never caught it.
+
+     All 47 probed live (HTTP 200 + valid feed): 2026-09-11, regrouped 2026-09-12. -->
+<opml version="2.0">
+  <head><title>AI / LLM Research Watch feeds</title></head>
+  <body>
+
+    <!-- ══ GAP FEEDS — enable even with an aggregator ══════════════════════════════════ -->
+
+    <outline text="Safety / alignment (gap)">
+      <outline text="Redwood Research" type="rss" xmlUrl="https://redwoodresearch.substack.com/feed"/>
+      <outline text="Center for AI Safety newsletter" type="rss" xmlUrl="https://newsletter.safe.ai/feed"/>
+      <outline text="Future of Life Institute" type="rss" xmlUrl="https://futureoflife.org/feed/"/>
+      <outline text="METR" type="rss" xmlUrl="https://metr.org/blog/rss.xml"/>
+      <outline text="Machine Intelligence Research Institute" type="rss" xmlUrl="https://intelligence.org/feed/"/>
+      <outline text="80,000 Hours" type="rss" xmlUrl="https://80000hours.org/feed/"/>
+    </outline>
+
+    <outline text="Governance / policy (gap)">
+      <outline text="Center for Security and Emerging Technology" type="rss" xmlUrl="https://cset.georgetown.edu/feed/"/>
+      <outline text="EU AI Act newsletter" type="rss" xmlUrl="https://artificialintelligenceact.eu/feed/"/>
+      <outline text="AI Now Institute" type="rss" xmlUrl="https://ainowinstitute.org/feed"/>
+      <outline text="RAND — Artificial intelligence" type="rss" xmlUrl="https://www.rand.org/topics/artificial-intelligence.xml"/>
+      <outline text="Lawfare" type="rss" xmlUrl="https://www.lawfaremedia.org/feeds/articles"/>
+    </outline>
+
+    <outline text="Incidents (gap)">
+      <outline text="AI Incident Database" type="rss" xmlUrl="https://incidentdatabase.ai/rss.xml"/>
+    </outline>
+
+    <outline text="Labs (gap)">
+      <outline text="OpenAI News" type="rss" xmlUrl="https://openai.com/news/rss.xml"/>
+      <outline text="OpenAI Blog" type="rss" xmlUrl="https://openai.com/blog/rss.xml"/>
+      <outline text="Google Research" type="rss" xmlUrl="https://research.google/blog/rss/"/>
+      <outline text="EleutherAI" type="rss" xmlUrl="https://blog.eleuther.ai/index.xml"/>
+      <outline text="Stanford AI Lab (SAIL)" type="rss" xmlUrl="https://ai.stanford.edu/blog/feed.xml"/>
+    </outline>
+
+    <outline text="Commentary / analysis (gap)">
+      <outline text="Transformer" type="rss" xmlUrl="https://www.transformernews.ai/feed"/>
+      <outline text="Don't Worry About the Vase" type="rss" xmlUrl="https://thezvi.substack.com/feed"/>
+      <outline text="The Gradient" type="rss" xmlUrl="https://thegradient.pub/rss/"/>
+      <outline text="Import AI" type="rss" xmlUrl="https://importai.substack.com/feed"/>
+      <outline text="Ahead of AI (Sebastian Raschka)" type="rss" xmlUrl="https://magazine.sebastianraschka.com/feed"/>
+      <outline text="AI Snake Oil" type="rss" xmlUrl="https://www.aisnakeoil.com/feed"/>
+      <outline text="Interconnects" type="rss" xmlUrl="https://www.interconnects.ai/feed"/>
+      <outline text="ChinAI" type="rss" xmlUrl="https://chinai.substack.com/feed"/>
+      <outline text="Platformer" type="rss" xmlUrl="https://www.platformer.news/rss/"/>
+    </outline>
+
+    <!-- ══ BROAD COVERAGE — enable ONLY without an aggregator ═════════════════════════ -->
+
+    <outline text="Preprints (broad)">
+      <outline text="arXiv cs.AI" type="rss" xmlUrl="https://export.arxiv.org/rss/cs.AI"/>
+      <outline text="arXiv cs.LG" type="rss" xmlUrl="https://export.arxiv.org/rss/cs.LG"/>
+      <outline text="arXiv cs.CL" type="rss" xmlUrl="https://export.arxiv.org/rss/cs.CL"/>
+    </outline>
+
+    <outline text="Safety / alignment (broad)">
+      <outline text="Alignment Forum" type="rss" xmlUrl="https://www.alignmentforum.org/feed.xml"/>
+      <outline text="LessWrong" type="rss" xmlUrl="https://www.lesswrong.com/feed.xml"/>
+    </outline>
+
+    <outline text="Governance / policy (broad)">
+      <outline text="NIST news" type="rss" xmlUrl="https://www.nist.gov/news-events/news/rss.xml"/>
+    </outline>
+
+    <outline text="Labs (broad)">
+      <outline text="Google DeepMind" type="rss" xmlUrl="https://deepmind.google/blog/rss.xml"/>
+      <outline text="Google AI (The Keyword)" type="rss" xmlUrl="https://blog.google/technology/ai/rss/"/>
+      <outline text="Hugging Face" type="rss" xmlUrl="https://huggingface.co/blog/feed.xml"/>
+      <outline text="Microsoft Research" type="rss" xmlUrl="https://www.microsoft.com/en-us/research/feed/"/>
+      <outline text="Apple Machine Learning" type="rss" xmlUrl="https://machinelearning.apple.com/rss.xml"/>
+      <outline text="NVIDIA Deep Learning" type="rss" xmlUrl="https://blogs.nvidia.com/blog/category/deep-learning/feed/"/>
+      <outline text="MIT News — Artificial Intelligence" type="rss" xmlUrl="https://news.mit.edu/rss/topic/artificial-intelligence2"/>
+      <outline text="Nature — Machine learning" type="rss" xmlUrl="https://www.nature.com/subjects/machine-learning.rss"/>
+    </outline>
+
+    <outline text="Press (broad)">
+      <outline text="Ars Technica — Technology Lab" type="rss" xmlUrl="https://feeds.arstechnica.com/arstechnica/technology-lab"/>
+      <outline text="The Verge — AI" type="rss" xmlUrl="https://www.theverge.com/rss/ai-artificial-intelligence/index.xml"/>
+      <outline text="TechCrunch — AI" type="rss" xmlUrl="https://techcrunch.com/category/artificial-intelligence/feed/"/>
+      <outline text="MIT Technology Review — AI" type="rss" xmlUrl="https://www.technologyreview.com/topic/artificial-intelligence/feed"/>
+      <outline text="Wired — AI" type="rss" xmlUrl="https://www.wired.com/feed/tag/ai/latest/rss"/>
+      <outline text="404 Media" type="rss" xmlUrl="https://www.404media.co/rss/"/>
+      <outline text="Simon Willison" type="rss" xmlUrl="https://simonwillison.net/atom/everything/"/>
+    </outline>
+
+  </body>
+</opml>

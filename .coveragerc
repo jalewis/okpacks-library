@@ -1,0 +1,25 @@
+# Coverage config for the pack test lanes (okengine#601).
+#
+# `parallel` because the suites run as several processes: pytest for packs/*/tests + tests/,
+# then each pack's conformance entrypoint as its own `python3 conformance/test_*.py` from
+# inside the pack directory. `coverage combine` merges them.
+#
+# NOTE: there is deliberately no `source =` here. Coverage's unexecuted-file discovery only
+# recurses into IMPORTABLE directories (ones with __init__.py), and this repo is loose scripts
+# under packs/*/crons/scripts/ — so `source = .` finds nothing that was not executed and the
+# report flatters itself: 57% measured that way against 21% real. scripts/coverage-run.sh
+# passes the file list explicitly instead, enumerated from `git ls-files`.
+# `relative_files` is deliberately OFF. Each conformance suite runs from inside its own pack
+# directory, so relative recording would file `crons/scripts/kev_import.py` under two different
+# meanings depending on which process saw it, and `combine` would not match them to the
+# repo-root paths the gate enumerates. That silently drops the whole conformance lane from the
+# measurement -- 21% reads as 3%, and nothing errors.
+[run]
+branch = True
+parallel = True
+
+[report]
+exclude_also =
+    if __name__ == .__main__.:
+    raise NotImplementedError
+    if TYPE_CHECKING:

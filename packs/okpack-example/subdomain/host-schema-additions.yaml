@@ -1,0 +1,7 @@
+# okpack-example — TAXONOMY-AUGMENTING co-install form.
+# `framework install-domain <deployment> <pack> --shape taxonomy` merges these types
+# into the HOST's root schema (host wins on any type it already owns). Pages of the
+# added types live in the host's own namespaces — no subtree.
+# Single-source rule: derived from the main schema.yaml; regenerate on type changes.
+types:
+  topic: {required: [type, name], owner: okpack-example}

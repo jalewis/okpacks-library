@@ -1,0 +1,11 @@
+# Sample watchlist: DEVELOPER TOOLS. Copy to config/competitive-watchlist.yaml and edit.
+segments:
+  devops-platforms:
+    label: "SCM / CI / DevOps platforms"
+    competitors: [github, gitlab, hashicorp]
+    axes: {x: "platform consolidation", y: "enterprise adoption"}
+  app-platforms:
+    label: "App / deployment platforms + IDEs"
+    competitors: [vercel, replit, jetbrains]
+    axes: {x: "AI-native depth", y: "team-scale fit"}
+watch_signals: [pricing, launch, funding, hire, partnership, acquisition]

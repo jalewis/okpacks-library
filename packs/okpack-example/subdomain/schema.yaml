@@ -1,0 +1,15 @@
+# okpack-example — SUBTREE co-install form (walk-up sub-domain).
+# `framework install-domain <deployment> <pack> --shape subtree` copies this file to
+# wiki/example/schema.yaml in the host: pages under that subtree validate against
+# THIS contract (nearest schema governs); the host's root schema is untouched.
+# Single-source rule: types here must be a strict subset of the main schema.yaml
+# with identical required fields (framework validate enforces it).
+types:
+  playbook: {required: [type, title]}
+
+# Declared so the installer creates the dirs and the walk-up namespace guard
+# actually enforces where subtree pages may land (a subdomain schema without
+# partitioning gets a framework-validate WARN).
+partitioning:
+  namespaces:
+    playbooks: {strategy: flat}

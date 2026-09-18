@@ -1,0 +1,46 @@
+okpacks-library — OKEngine pack library
+Copyright the respective pack authors.
+
+The pack DEFINITIONS in this repository (schema.yaml, CLAUDE.md, crons, feed lists,
+pack.yaml, and the empty wiki/ scaffold) are licensed under Apache-2.0 (see LICENSE),
+except where an individual pack ships its own LICENSE.
+
+This repository ships NO compiled knowledge content. When you deploy a pack, OKEngine
+ingests the feeds YOU configure and compiles them into wiki pages — those pages are
+DERIVATIVE WORKS of the ingested sources. Redistributing generated content is the
+deploying operator's responsibility: respect each source's license and any TLP /
+sensitivity marking. Do NOT contribute compiled content built from copyrighted
+sources to this repository.
+
+-------------------------------------------------------------------------------
+Third-party reference data fetched by pack importers (NOT vendored here)
+-------------------------------------------------------------------------------
+
+Some packs ship no_agent importers that fetch public reference datasets at deploy
+time and write them into the operator's own vault. These datasets are NOT included
+in this repository; each deployment fetches them from the upstream source, whose
+terms govern. The shipped packs fetch:
+
+okpack-cti:
+  * MITRE ATT&CK (https://github.com/mitre-attack/attack-stix-data) — © The MITRE
+    Corporation; ATT&CK terms of use apply.
+  * CISA Known Exploited Vulnerabilities (https://www.cisa.gov/kev) — U.S. CISA, public domain.
+  * NVD — NIST National Vulnerability Database, API 2.0
+    (https://services.nvd.nist.gov/rest/json/cves/2.0) — U.S. NIST.
+  * NVD bulk CVE feed (OPTIONAL `--bulk` backfill) — FKIE-CAD per-year `CVE-<YEAR>.json[.xz]`
+    files (https://github.com/fkie-cad/nvd-json-data-feeds). Operator-provided/fetched; not
+    auto-downloaded by the importer.
+  * Microsoft threat-actor naming ("Rosetta Stone") — MSTIC mapping
+    (https://raw.githubusercontent.com/microsoft/mstic/) and the Microsoft Learn naming
+    reference (https://learn.microsoft.com/) — © Microsoft.
+  * ThaiCERT / ETDA "Threat Group Cards: A Threat Actor Encyclopedia"
+    (https://apt.etda.or.th/) — © ETDA, free for the community; attribution required.
+    Imported pages record the ThaiCERT card URL as provenance.
+
+okpack-ai-research:
+  * Hugging Face Hub model metadata API (https://huggingface.co/api/models) — model cards
+    © their respective authors; Hugging Face terms of service apply.
+  * Hugging Face Daily Papers API (https://huggingface.co/api/daily_papers) — paper
+    metadata; arXiv / Hugging Face terms apply.
+
+Operators redistributing a populated vault must honor each upstream source's terms.

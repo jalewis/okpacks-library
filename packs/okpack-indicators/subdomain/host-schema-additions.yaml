@@ -1,0 +1,91 @@
+# okpack-indicators co-install — host-schema ADDITIONS (taxonomy-augmenting shape; docs/authoring-a-pack.md §8).
+# Single-source rule: a SUBSET of the standalone schema.yaml (`indicator` + `infrastructure`). Host wins on
+# collision. These are the observable-layer types the pack mints; they wikilink the host's actor/malware world.
+types:
+  indicator:
+    required: [type]
+  infrastructure:
+    required: [type]
+# legacy/STIX-ish name resolution carried into the composed host (okengine#181):
+# a page authored `type: ioc` drains to `indicator`, `type: host` to `infrastructure`.
+type_aliases:
+  ioc: indicator
+  host: infrastructure
+
+# Field vocabularies corpus_audit's enum-drift metric tracks — travel into a composed vault via
+# install-domain's merge_enums (okengine#259 rec 12) so drift on indicator.indicator_type /
+# infrastructure.infra_type is DETECTABLE in the composed deploy. Mirror of the standalone schema.yaml
+# (host wins on collision; source_kind is intentionally omitted — the host owns that vocabulary).
+enums:
+  indicator_type: [url, domain, ip, ipv4, ipv6, md5, sha1, sha256, email, filename, registry-key]
+  infra_type: [asn, netblock, hosting-provider, c2, name-server, sinkhole, cdn]
+field_enums:
+  indicator_type: {by_type: {indicator: indicator_type}}
+  infra_type: {by_type: {infrastructure: infra_type}}
+
+# Cockpit tab this pack contributes to a composed vault (merged by install-domain).
+cockpit:
+  tabs:
+  - indicators
+  tab_defs:
+    indicators:
+      label: Indicators
+      boxes:
+      - title: IOC pulse
+        span: 12
+        view: chips
+        dataset:
+          dir: indicators
+          type: indicator
+        group_by: indicator_type
+        meta: "indicators by normalized observable type"
+        # STIX cyber-observable types used as indicators — the sanctioned vocabulary. Verbose
+        # free-text bleeding into the type field ("threat vector (supply chain attack …)",
+        # "malicious file (sideloaded …)") collapses into one drillable 'unmapped (N)' chip instead
+        # of each taking a slot (okengine#259 Rec 4/10). Extend labels to promote a type.
+        bucket_unmapped: true
+        labels:
+          url: URL
+          domain-name: Domain
+          hostname: Hostname
+          ipv4-addr: IPv4
+          ipv4_address: IPv4
+          ipv6-addr: IPv6
+          email-addr: Email
+          file: File
+          md5: MD5
+          sha1: SHA-1
+          sha256: SHA-256
+      - title: Freshest
+        span: 7
+        view: table
+        dataset:
+          dir: indicators
+          type: indicator
+        sort:
+          field: last_seen
+          desc: true
+          require: true
+        limit: 6
+        meta: defanged; by last_seen
+        columns:
+        - field: value
+          label: Indicator
+          defang: true
+        - field: indicator_type
+          label: Type
+        - field: threat
+          label: Threat
+        - field: last_seen
+          label: Seen
+          date: true
+      - title: By malware family
+        span: 5
+        view: bars
+        dataset:
+          dir: indicators
+          type: indicator
+        group_by: malware_family
+        tone: crit
+        limit: 6
+        meta: "indicators grouped by linked malware family"

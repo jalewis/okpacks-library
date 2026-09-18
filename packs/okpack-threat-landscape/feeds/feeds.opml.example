@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- okpack-threat-landscape SUGGESTED feed sources — OPTIONAL. This pack's PRIMARY source is the
+     annual-report bulk importer (annual_reports_import.py); these feeds are optional ongoing signal.
+     DISABLED BY DEFAULT: copy entries into feeds/feeds.opml to opt in. Consumed by feed_fetch.py ->
+     raw/threat-landscape/ -> the ingest cron. Re-probe with the validate.py probe flag.
+     Probed live (HTTP 200): 2026-07-05. -->
+<opml version="2.0">
+  <head><title>Threat-landscape feeds (optional)</title></head>
+  <body>
+    <outline text="Industry analysis">
+      <outline text="CISA Cybersecurity Advisories" type="rss" xmlUrl="https://www.cisa.gov/cybersecurity-advisories/all.xml"/>
+    </outline>
+  </body>
+</opml>

@@ -1,0 +1,78 @@
+[
+  {
+    "id": "a1f0c7d3e2b4",
+    "name": "okpack-ai-research-feed-fetch",
+    "enabled": true,
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:2h"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "okpack-ai-research feed pull: fetch the AI-research OPML into raw/ai/ for the ingest lane. Pure script, wakeAgent=false.",
+    "script": "/opt/data/scripts/okpack_ai_research_feed_fetch.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "c3a2f1e6d5b8",
+    "name": "okpack-ai-research-hf-import",
+    "enabled": true,
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Seed notable model pages from the Hugging Face hub (bounded top-N by likes). Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/okpack_ai_research_hf_import.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "d4b3c2a1f6e9",
+    "name": "okpack-ai-research-hf-papers-import",
+    "enabled": true,
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "Seed source/paper pages from Hugging Face Daily Papers (bounded, upvote-curated). Pure script, wakeAgent=false, ZERO LLM tokens.",
+    "script": "/opt/data/scripts/okpack_ai_research_hf_papers_import.py",
+    "deliver": "local",
+    "no_agent": true
+  },
+  {
+    "id": "b2e1d8a4f3c5",
+    "name": "okpack-ai-research-weekly-brief",
+    "enabled": true,
+    "output_contract": {
+      "api": 1,
+      "allowed_namespaces": ["briefings"],
+      "allowed_types": ["briefing"],
+      "operations": ["create", "update"],
+      "required_fields": ["type", "title", "published", "updated"],
+      "required_relationships": [],
+      "body": {"required": true, "min_non_whitespace": 200},
+      "unknown_fields": "reject",
+      "unresolved_links": "reject",
+      "placeholder_links": "reject",
+      "completion": "run"
+    },
+    "adversarial_fixtures": ["tests/test_model_output_contracts.py"],
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:weekly"
+    },
+    "workdir": "/opt/vault",
+    "enabled_toolsets": [
+      "file",
+      "todo",
+      "skills",
+      "delegation",
+      "okengine-write",
+      "okengine"
+    ],
+    "prompt": "Weekly AI-research brief. FIRST read wiki/HOT.md. Write only one briefing via okengine-write to briefings/<YYYY-MM-DD>.md with type, title, published and updated set to TODAY. Cover 4-6 significant developments from the last seven days. EVERY item must end with a Source: [[sources/...]] line using an existing source actually read; entity links must be supported by that cited source. Skip unsupported claims and unresolved links. Never create or update sources, entities, concepts, predictions, or findings. Practitioner-grade and terse. LOCAL-ONLY; never file_write.",
+    "deliver": "local"
+  }
+]

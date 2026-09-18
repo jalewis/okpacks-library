@@ -1,0 +1,23 @@
+# okengine.actor-risk-ranking — VENDOR-ONTOLOGY example (okengine#170 / #174).
+# Copy to config/actor-risk-targets.yaml and replace with YOUR dependency profile.
+# The pack ships no vendor names or dependency assumptions — this file is documentation.
+#
+# Reading this config: the "actors" being ranked are the VENDOR pages; the target is
+# your organization's dependency profile. Drivers reinterpret generically:
+#   direct      vendor <-> your org's entity page (co-mention)
+#   opportunity vendor <-> vulnerability edges where the vuln also touches a product you run
+#   capability  breadth of the vendor's product/component footprint in the graph
+#   intent      vendor <-> segment edges intersecting your sectors
+#   recency     the vendor's in-horizon source mentions (incidents surface here)
+targets:
+  our-dependencies:
+    type: company
+    # entity: entities/o/<your-org>        # optional — enables the direct driver
+    sectors: [cloud-infrastructure]         # segment/concept slugs in YOUR vault
+    technologies: []                        # full page keys of products you run, e.g. [entities/p/example-crm]
+scoring:
+  actor_types: [vendor]                     # rank vendors, not threat actors
+  capability_types: [product, component]    # footprint = what they supply
+  horizon_days: 180
+  min_origin_domains: 2
+  top_n: 25

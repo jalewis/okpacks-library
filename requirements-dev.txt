@@ -1,0 +1,13 @@
+# Full local checks — everything in requirements.txt plus the official standards
+# validators the okpack-cti conformance suite proves against (STIX 2.1 + OCSF).
+# Without these the conformance suite runs DEGRADED (structural + golden only); CI
+# installs them and runs full-strength. Install with:
+#   pip install -r requirements-dev.txt
+-r requirements.txt
+stix2
+py-ocsf-models
+
+# Security audit tooling (okpacks-library#44) — dependency CVE scan + Python SAST.
+# Run via scripts/audit.sh (okpacks audit); gated in CI's `audit` job.
+pip-audit>=2.7,<3
+bandit>=1.7,<2

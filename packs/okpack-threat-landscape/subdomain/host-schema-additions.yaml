@@ -1,0 +1,27 @@
+# okpack-threat-landscape co-install — host-schema ADDITIONS (taxonomy-augmenting shape; §8).
+# Single-source rule: SUBSET of the standalone schema.yaml (`metric` + `publisher`). Host wins on collision.
+# These are landscape-analysis types the pack mints; they wikilink the host's actor/cve entity world.
+types:
+  metric:
+    required: [type]
+  publisher:
+    required: [type]
+# legacy STIX/old-name resolution carried into the composed host (okengine#181)
+type_aliases:
+  statistic: metric
+  kpi: metric
+
+# Enum-bound fields this pack mints — must COMPOSE so the write path + corpus_audit enforce them in a
+# bundle vault, not only standalone (rec-12 / okpacks#60; the class okengine#281 guards). source_kind is
+# HOST-owned, so it is deliberately omitted here. Mirrors this pack's standalone schema.yaml (report_theme
+# + metric_unit stay extensible, as declared there).
+enums:
+  report_theme: [ransomware, data-breach, threat-intelligence, vulnerability-management, cloud-security, identity-security, supply-chain, zero-trust, ai-security, phishing-social-engineering, ot-ics-security, insider-threat, ddos, api-security, incident-response, nation-state]
+  report_category: [analysis, survey]
+  metric_direction: [up, down, flat, mixed]
+  metric_unit: [percent, usd, days, count, ratio, other]
+field_enums:
+  report_theme: {enum: report_theme, extensible: true}
+  report_category: {enum: report_category}
+  metric_direction: {by_type: {metric: metric_direction}}
+  metric_unit: {by_type: {metric: metric_unit}, extensible: true}

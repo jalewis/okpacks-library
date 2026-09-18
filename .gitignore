@@ -1,0 +1,24 @@
+# secrets + runtime — NEVER commit (these are pack DEFINITIONS, not deployments)
+.env
+*.env
+.hermes-data/
+config.yaml
+raw/
+
+# python / editor / scratch
+__pycache__/
+*.pyc
+*.bak
+*.bak.*
+.DS_Store
+.venv/
+venv/
+
+# coverage artifacts — the BASELINE (coverage-baseline.json) is committed; the measurement is not
+.coverage
+.coverage.*
+coverage.json
+htmlcov/
+
+# tooling
+.serena/

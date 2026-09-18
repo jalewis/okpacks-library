@@ -1,0 +1,16 @@
+[
+  {
+    "id": "10fccaa5b052",
+    "name": "okpack-competitive-feed-fetch",
+    "enabled": true,
+    "schedule": {
+      "kind": "cron",
+      "expr": "@jitter:2h"
+    },
+    "workdir": "/opt/vault",
+    "prompt": "okpack-competitive feed pull: fetch the competitive feeds OPML into raw/competitive/ for the ingest lane. Pure script, wakeAgent=false.",
+    "script": "/opt/data/scripts/okpack_competitive_feed_fetch.py",
+    "deliver": "local",
+    "no_agent": true
+  }
+]

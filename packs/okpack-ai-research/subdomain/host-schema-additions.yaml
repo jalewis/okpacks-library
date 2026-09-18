@@ -1,0 +1,24 @@
+# okpack-ai-research co-install — host-schema ADDITIONS (taxonomy-augmenting shape;
+# engine docs/authoring-a-pack.md §8). Host wins on collision — verify required-field
+# compatibility instead of overwriting. AI-research types rarely collide with security/market hosts; raw stream already namespaced (raw/ai).
+# Host-REUSABLE types (do NOT add if the host declares them): none — all six below are
+# ai-research domain types; a host that already declares one wins on collision anyway.
+types:
+  benchmark:
+    required:
+    - type
+  dataset:
+    required:
+    - type
+  lab:
+    required:
+    - type
+  model:
+    required:
+    - type
+  researcher:
+    required:
+    - type
+  method:
+    required:
+    - type

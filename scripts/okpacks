@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# okpacks — one CLI over the library's checks (okpacks-library#30).
+#
+# A thin, discoverable wrapper over the scripts in this directory so contributors don't have to
+# remember which script does what. Run `okpacks help` for the command list. (Symlink or alias it
+# onto your PATH, or call `scripts/okpacks <cmd>`.)
+set -uo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cmd="${1:-help}"; shift || true
+
+usage() {
+  cat <<'EOF'
+okpacks — okpacks-library maintenance CLI
+
+  okpacks validate            per-pack validation + library gate (offline; scripts/validate-all.sh)
+  okpacks library             catalog + cross-pack invariants only (scripts/validate-library.py)
+  okpacks conformance [--strict]  every pack's conformance suite (scripts/conformance-all.sh)
+  okpacks probe-feeds [--json F --md F]  feed health report: status/redirects/latency (network)
+  okpacks changes [--base REF]  flag contract changes missing a CHANGELOG update (scripts/check-changes.py)
+  okpacks sync-lib [--check]  re-vendor / check the shared validator lib (scripts/sync-validate-lib.py)
+  okpacks audit               dependency CVE scan (pip-audit) + Python SAST (bandit) (scripts/audit.sh)
+  okpacks bootstrap           install dev deps + run the full CI path (scripts/bootstrap-dev.sh)
+  okpacks publish             stage the public no-history snapshot (scripts/publish-snapshot.sh)
+  okpacks quality             pack readiness scoring + fixture coverage (scripts/pack_quality.py)
+  okpacks help                this message
+EOF
+}
+
+case "$cmd" in
+  validate)            exec bash "$ROOT/scripts/validate-all.sh" "$@" ;;
+  library|lint-catalog|lint-library)
+                       exec python3 "$ROOT/scripts/validate-library.py" "$@" ;;
+  conformance)         exec bash "$ROOT/scripts/conformance-all.sh" "$@" ;;
+  sync-lib)            exec python3 "$ROOT/scripts/sync-validate-lib.py" "$@" ;;
+  audit)               exec bash "$ROOT/scripts/audit.sh" "$@" ;;
+  bootstrap)           exec bash "$ROOT/scripts/bootstrap-dev.sh" "$@" ;;
+  publish)             exec bash "$ROOT/scripts/publish-snapshot.sh" "$@" ;;
+  probe-feeds)         exec python3 "$ROOT/scripts/feed_report.py" "$@" ;;
+  changes)             exec python3 "$ROOT/scripts/check-changes.py" "$@" ;;
+  quality)            exec python3 "$ROOT/scripts/pack_quality.py" "$@" ;;
+  help|-h|--help)      usage ;;
+  *)                   echo "okpacks: unknown command '$cmd'" >&2; echo; usage; exit 2 ;;
+esac

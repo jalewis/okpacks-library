@@ -1,0 +1,12 @@
+# Sample watchlist: OBSERVABILITY. Copy to config/competitive-watchlist.yaml and edit.
+# home: <your-company-slug>   # uncomment + set to anchor discover-competitors co-occurrence
+segments:
+  full-stack-observability:
+    label: "Full-stack observability platforms"
+    competitors: [datadog, new-relic, dynatrace, grafana-labs]
+    axes: {x: "platform breadth", y: "enterprise price point"}
+  open-source-first:
+    label: "OSS-first / open-standards observability"
+    competitors: [grafana-labs, elastic, honeycomb, chronosphere]
+    axes: {x: "OpenTelemetry alignment", y: "managed-service maturity"}
+watch_signals: [pricing, launch, funding, hire, partnership, acquisition]

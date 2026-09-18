@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- okpack-vuln SUGGESTED feed sources — OPTIONAL. This pack's PRIMARY source is the CISA KEV bulk
+     importer (kev_import.py, no RSS needed); these feeds are optional ongoing advisory signal on top.
+     DISABLED BY DEFAULT: a suggestion list, not active config. Copy the ones you want into
+     feeds/feeds.opml to opt in. Consumed by the engine's generic feed_fetch.py -> raw/vuln/ -> the
+     ingest cron compiles into wiki/. Re-probe with the validate.py probe flag.
+     Both probed live (HTTP 200): 2026-07-05. -->
+<opml version="2.0">
+  <head><title>Vulnerability tracking feeds (optional)</title></head>
+  <body>
+    <outline text="Advisories">
+      <outline text="CISA Cybersecurity Advisories" type="rss" xmlUrl="https://www.cisa.gov/cybersecurity-advisories/all.xml"/>
+      <outline text="Zero Day Initiative (published)" type="rss" xmlUrl="https://www.zerodayinitiative.com/rss/published/"/>
+    </outline>
+  </body>
+</opml>
