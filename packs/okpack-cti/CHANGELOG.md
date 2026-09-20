@@ -6,6 +6,12 @@ spec §12.2 — **Breaking** / **Additive** / **Editorial**. Format loosely foll
 
 [Keep a Changelog]: https://keepachangelog.com/
 
+## 0.3.3 — 2026-09-19
+
+- Require OKEngine v0.14.5 and Hermes v0.21.3 (`v2026.9.14`).
+
+Migration impact: none — runtime compatibility release only.
+
 ## 0.3.2 — 2026-09-17
 
 - Require OKEngine v0.14.4 and Hermes v0.21.3 (`v2026.9.14`).

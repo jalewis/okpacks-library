@@ -2,7 +2,7 @@
 # `validate.py` checks this; at deploy the engine validates the whole composed
 # set (disjoint ownership, requires present, single trust level).
 name: okpack-threat-actors
-version: 0.2.6
+version: 0.2.7
 description: "Threat-actor / adversary tracking from open-source threat intelligence"
 mission: >-
   Tracks threat actors, their campaigns, malware, tools and MITRE ATT&CK techniques from

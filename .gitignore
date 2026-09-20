@@ -22,3 +22,5 @@ htmlcov/
 
 # tooling
 .serena/
+artifacts/
+.cache/pip/

@@ -4,6 +4,14 @@ All notable changes to this pack. Format loosely follows [Keep a Changelog].
 
 [Keep a Changelog]: https://keepachangelog.com/
 
+## 0.1.3 — 2026-09-19
+
+- Require OKEngine v0.14.5 and Hermes v0.21.3 (`v2026.9.14`).
+- Remove the unsupported `reshard_by: year` directive; `by-date` continues to
+  place incidents at the same canonical `YYYY/MM` paths.
+
+Migration impact: none — canonical paths are unchanged.
+
 ## 0.1.2 — 2026-09-17
 
 - Require OKEngine v0.14.4 and Hermes v0.21.3 (`v2026.9.14`).

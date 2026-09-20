@@ -2,7 +2,7 @@
 # `validate.py` checks this; at deploy the engine validates the whole composed
 # set (disjoint ownership, requires present, single trust level).
 name: okpack-example
-version: 0.1.6
+version: 0.1.7
 description: "Generic starter pack (the skeleton shape)"
 mission: >-
   A worked example of a complete OKEngine pack — schema, persona, feeds, crons, both co-install forms. Replace everything domain-shaped with your own.

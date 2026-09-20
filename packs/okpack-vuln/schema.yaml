@@ -25,7 +25,7 @@ common_optional: [id, title, description, tags, created, updated, related, sourc
 partitioning:
   reshard_over: 500
   namespaces:
-    cves:        {strategy: by-date, date_field: date_added, reshard_by: year}
+    cves:        {strategy: by-date, date_field: date_added}
     sources:     {strategy: by-date, date_field: published, reshard_by: day}
     concepts:    {strategy: by-letter, reshard_by: second-letter}
     predictions: {strategy: flat}

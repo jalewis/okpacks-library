@@ -2,7 +2,7 @@
 # `validate.py` checks this; at deploy the engine validates the whole composed
 # set (disjoint ownership, requires present, single trust level).
 name: okpack-detections
-version: 0.1.2
+version: 0.1.3
 description: "Detections (Sigma/YARA) + ATT&CK mitigations — the defensive-response layer of a CTI vault"
 mission: >-
   Tracks the defensive layer: `detection` rules (Sigma/YARA/EQL — what you watch for) seeded from the

@@ -3,7 +3,7 @@
 # with one command (`framework pull okpack-cti`). The engine resolves the recipe: it pulls `host`
 # as the base vault, then `install-domain --apply`s each `compose` pack onto it.
 name: okpack-cti
-version: 0.3.2
+version: 0.3.3
 kind: bundle
 description: "Security / threat-intel BUNDLE (STIX-aligned) — the composed CTI pack family"
 mission: >-

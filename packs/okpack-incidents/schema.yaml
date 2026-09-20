@@ -22,7 +22,7 @@ partitioning:
   reshard_over: 500
   namespaces:
     entities:    {strategy: by-letter, reshard_by: second-letter}
-    security-incidents: {strategy: by-date, date_field: incident_date, reshard_by: year}   # events, time-ordered
+    security-incidents: {strategy: by-date, date_field: incident_date}   # events, time-ordered
     sources:     {strategy: by-date, date_field: published, reshard_by: day}
     concepts:    {strategy: by-letter, reshard_by: second-letter}
     predictions: {strategy: flat}

@@ -22,7 +22,7 @@ partitioning:
   reshard_over: 500
   namespaces:
     entities:    {strategy: by-letter, reshard_by: second-letter}
-    indicators:  {strategy: by-date, date_field: first_seen, reshard_by: month}   # IOCs: high-volume, time-ordered
+    indicators:  {strategy: by-date, date_field: first_seen}   # IOCs: high-volume, time-ordered
     sources:     {strategy: by-date, date_field: published, reshard_by: day}
     concepts:    {strategy: by-letter, reshard_by: second-letter}
     predictions: {strategy: flat}

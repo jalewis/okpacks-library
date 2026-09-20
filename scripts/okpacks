@@ -20,7 +20,7 @@ okpacks — okpacks-library maintenance CLI
   okpacks sync-lib [--check]  re-vendor / check the shared validator lib (scripts/sync-validate-lib.py)
   okpacks audit               dependency CVE scan (pip-audit) + Python SAST (bandit) (scripts/audit.sh)
   okpacks bootstrap           install dev deps + run the full CI path (scripts/bootstrap-dev.sh)
-  okpacks publish             stage the public no-history snapshot (scripts/publish-snapshot.sh)
+  okpacks publish             qualify public snapshot (GitLab public-snapshot job only)
   okpacks quality             pack readiness scoring + fixture coverage (scripts/pack_quality.py)
   okpacks help                this message
 EOF

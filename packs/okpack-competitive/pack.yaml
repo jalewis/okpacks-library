@@ -6,7 +6,7 @@
 # NO proprietary content. The watchlist (who you track), feeds (your sources), tuned
 # heuristics, and the vault content are DEPLOYMENT config — never in this template.
 name: okpack-competitive
-version: 0.1.2
+version: 0.1.3
 description: "Competitive / market intelligence for any tracked market"
 mission: >-
   Tracks competitors, products, segments, deals and movement signals for an operator-configured market; compiles feeds into a durable graph that answers who is moving, where, and what it means for positioning.

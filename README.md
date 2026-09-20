@@ -87,7 +87,7 @@ Each pack pins an `engine.version`; bring it up per the OKEngine authoring guide
 
 ### Composition & bundles
 
-The security packs demonstrate **composition** (OKEngine v0.14.4): each owns a disjoint slice of
+The security packs demonstrate **composition** (OKEngine v0.14.5): each owns a disjoint slice of
 types, and the library enforces globally-unique type ownership so any set composes into one vault.
 **`okpack-cti` is a bundle** (`kind: bundle`) — it owns nothing and declares a recipe that composes
 the six CTI packs. `framework pull okpack-cti` fetches the host (`okpack-threat-actors`) as the base

@@ -8,11 +8,11 @@
       "repo": "jalewis/okpacks-library",
       "subdir": "packs/okpack-example",
       "ref": "main",
-      "engine_version": "v0.14.4",
-      "validated_against": "v0.14.4",
+      "engine_version": "v0.14.5",
+      "validated_against": "v0.14.5",
       "trust": "public",
       "status": "example",
-      "version": "0.1.6"
+      "version": "0.1.7"
     },
     {
       "name": "okpack-competitive",
@@ -20,11 +20,11 @@
       "repo": "jalewis/okpacks-library",
       "subdir": "packs/okpack-competitive",
       "ref": "main",
-      "engine_version": "v0.14.4",
-      "validated_against": "v0.14.4",
+      "engine_version": "v0.14.5",
+      "validated_against": "v0.14.5",
       "trust": "public",
       "status": "flagship-generic",
-      "version": "0.1.2"
+      "version": "0.1.3"
     },
     {
       "name": "okpack-ai-research",
@@ -32,11 +32,11 @@
       "repo": "jalewis/okpacks-library",
       "subdir": "packs/okpack-ai-research",
       "ref": "main",
-      "engine_version": "v0.14.4",
-      "validated_against": "v0.14.4",
+      "engine_version": "v0.14.5",
+      "validated_against": "v0.14.5",
       "trust": "public",
       "status": "community",
-      "version": "0.3.2"
+      "version": "0.3.4"
     },
     {
       "name": "okpack-vendor-risk",
@@ -44,11 +44,11 @@
       "repo": "jalewis/okpacks-library",
       "subdir": "packs/okpack-vendor-risk",
       "ref": "main",
-      "engine_version": "v0.14.4",
-      "validated_against": "v0.14.4",
+      "engine_version": "v0.14.5",
+      "validated_against": "v0.14.5",
       "trust": "public",
       "status": "community",
-      "version": "0.1.2"
+      "version": "0.1.3"
     },
     {
       "name": "okpack-cti",
@@ -56,11 +56,11 @@
       "repo": "jalewis/okpacks-library",
       "subdir": "packs/okpack-cti",
       "ref": "main",
-      "engine_version": "v0.14.4",
-      "validated_against": "v0.14.4",
+      "engine_version": "v0.14.5",
+      "validated_against": "v0.14.5",
       "trust": "public",
       "status": "bundle",
-      "version": "0.3.2"
+      "version": "0.3.3"
     },
     {
       "name": "okpack-threat-actors",
@@ -68,11 +68,11 @@
       "repo": "jalewis/okpacks-library",
       "subdir": "packs/okpack-threat-actors",
       "ref": "main",
-      "engine_version": "v0.14.4",
-      "validated_against": "v0.14.4",
+      "engine_version": "v0.14.5",
+      "validated_against": "v0.14.5",
       "trust": "public",
       "status": "community",
-      "version": "0.2.6"
+      "version": "0.2.7"
     },
     {
       "name": "okpack-vuln",
@@ -80,11 +80,11 @@
       "repo": "jalewis/okpacks-library",
       "subdir": "packs/okpack-vuln",
       "ref": "main",
-      "engine_version": "v0.14.4",
-      "validated_against": "v0.14.4",
+      "engine_version": "v0.14.5",
+      "validated_against": "v0.14.5",
       "trust": "public",
       "status": "community",
-      "version": "0.1.2"
+      "version": "0.1.3"
     },
     {
       "name": "okpack-threat-landscape",
@@ -92,11 +92,11 @@
       "repo": "jalewis/okpacks-library",
       "subdir": "packs/okpack-threat-landscape",
       "ref": "main",
-      "engine_version": "v0.14.4",
-      "validated_against": "v0.14.4",
+      "engine_version": "v0.14.5",
+      "validated_against": "v0.14.5",
       "trust": "public",
       "status": "community",
-      "version": "0.2.1"
+      "version": "0.2.2"
     },
     {
       "name": "okpack-indicators",
@@ -104,11 +104,11 @@
       "repo": "jalewis/okpacks-library",
       "subdir": "packs/okpack-indicators",
       "ref": "main",
-      "engine_version": "v0.14.4",
-      "validated_against": "v0.14.4",
+      "engine_version": "v0.14.5",
+      "validated_against": "v0.14.5",
       "trust": "public",
       "status": "community",
-      "version": "0.1.2"
+      "version": "0.1.3"
     },
     {
       "name": "okpack-detections",
@@ -116,11 +116,11 @@
       "repo": "jalewis/okpacks-library",
       "subdir": "packs/okpack-detections",
       "ref": "main",
-      "engine_version": "v0.14.4",
-      "validated_against": "v0.14.4",
+      "engine_version": "v0.14.5",
+      "validated_against": "v0.14.5",
       "trust": "public",
       "status": "community",
-      "version": "0.1.2"
+      "version": "0.1.3"
     },
     {
       "name": "okpack-incidents",
@@ -128,11 +128,11 @@
       "repo": "jalewis/okpacks-library",
       "subdir": "packs/okpack-incidents",
       "ref": "main",
-      "engine_version": "v0.14.4",
-      "validated_against": "v0.14.4",
+      "engine_version": "v0.14.5",
+      "validated_against": "v0.14.5",
       "trust": "public",
       "status": "community",
-      "version": "0.1.2"
+      "version": "0.1.3"
     }
   ]
 }

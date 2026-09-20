@@ -2,7 +2,7 @@
 # `validate.py` checks this; at deploy the engine validates the whole composed
 # set (disjoint ownership, requires present, single trust level).
 name: okpack-vendor-risk
-version: 0.1.2
+version: 0.1.3
 description: "Vendor / supply-chain risk monitoring"
 mission: >-
   Tracks the organizations, products, components and contracts an operator depends on; ledgers dated incidents against them and ranks vendor risk relative to the configured dependency profile — 'which suppliers should worry us this quarter, and why.'

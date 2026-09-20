@@ -2,7 +2,7 @@
 # `validate.py` checks this; at deploy the engine validates the whole composed
 # set (disjoint ownership, requires present, single trust level).
 name: okpack-vuln
-version: 0.1.2
+version: 0.1.3
 description: "Actively-exploited vulnerability (CVE) tracking"
 mission: >-
   Tracks the vulnerabilities that are actually being EXPLOITED — seeded from CISA's Known Exploited

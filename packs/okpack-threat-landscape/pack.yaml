@@ -2,7 +2,7 @@
 # `validate.py` checks this; at deploy the engine validates the whole composed
 # set (disjoint ownership, requires present, single trust level).
 name: okpack-threat-landscape
-version: 0.2.1
+version: 0.2.2
 description: "Threat-landscape intelligence from annual security reports"
 mission: >-
   Turns the annual security-report firehose (DBIR, M-Trends, threat-landscape + industry/market
