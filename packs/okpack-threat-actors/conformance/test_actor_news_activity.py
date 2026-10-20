@@ -91,6 +91,9 @@ def test_news_recency_matches_by_name_and_respects_filters():
         # where misclassified breaking news lands, so excluding it excludes the news. See 2b.
         _write(S / "r1.md", {"type": "source", "source_kind": "report", "published": d(0),
                              "title": "Sandworm Team annual review"})
+        # outside the 180-day lookback: bounds news_total the same way it bounds news_last_seen
+        _write(S / "old.md", {"type": "source", "source_kind": "news", "published": d(200),
+                              "title": "Sandworm Team in an old story"})
         # a TOMBSTONED same-story duplicate must NOT be counted (else dedup can't fix the count):
         # this would otherwise be Sandworm's newest news (d(1) > d(2)) and bump recent_news to 2
         _write(S / "n5.md", {"type": "source", "source_kind": "news", "published": d(1),
@@ -119,6 +122,12 @@ def test_news_recency_matches_by_name_and_respects_filters():
         assert sandworm["recent_news_refs"] == ["sources/r1", "sources/n1"], sandworm
         assert cleaver["recent_news_refs"] == ["sources/n3"], cleaver
         assert lazarus.get("recent_news_refs") in (None, []), lazarus
+        # 6) news_total: the SAME matcher over the lookback (#100). The boards set it beside
+        #    recent_news, so it must never be smaller -- the old Total column was a different
+        #    lane's count and read News > Total on about half the rows.
+        assert (sandworm["news_total"], cleaver["news_total"], lazarus["news_total"]) == (2, 1, 1)
+        for actor in (sandworm, cleaver, lazarus):
+            assert actor["recent_news"] <= actor["news_total"], actor
 
 
 def test_news_only_selection_is_still_reachable_by_configuration(monkeypatch=None):

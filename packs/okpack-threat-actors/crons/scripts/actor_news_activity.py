@@ -12,13 +12,18 @@ names + aliases against the news firehose (`source_kind: news`), and stamps two 
                        newest-first, capped at 10 — the reader fact panel linkifies plain paths) —
                        provenance, so the board's number is visible evidence on the actor page
                        instead of a count that links nothing
+  - news_total       : how many news items named it in the last NEWS_LOOKBACK_DAYS — the SAME
+                       matcher over the longer window, so recent_news <= news_total always holds.
+                       The boards used to set recent_news beside `total_mentions`, a different
+                       lane's count of report pages tagged in `mentions_actors`; the two were not
+                       comparable, and News > Total on about half the rows (okpacks-library#100).
 
 These are DEDICATED fields (not the generic `last_seen`, which ingest also sets) so this lane is the
 sole owner — no race with the report lane, and a page's ingest-set `last_seen` can't leak onto the
 board. Deterministic name/alias match (word-boundary, case-insensitive), no model. MERGE-safe.
 
 Matching is deliberately conservative to protect precision (these dates drive an analyst board):
-  * a term must be >= 5 chars, OR >= 4 chars if it contains a digit (keeps APT29 / FIN7 / TA505);
+  * short/common names require local actor, tracked-name or adversarial-action context;
   * a single-word generic codename suffix (spider / panda / tempest / typhoon / …) is dropped — the
     multi-word alias that contains it ("Velvet Tempest") is still kept and is distinctive;
   * a term shared by two different actors is dropped as ambiguous.
@@ -47,66 +52,7 @@ _FM = re.compile(r"^---\s*\n(.*?)\n---\s*\n(.*)", re.S)
 _PATH_DATE = re.compile(r"/sources/(\d{4})/(\d{2})/(\d{2})/")
 _ISO = re.compile(r"(\d{4}-\d{2}-\d{2})")
 
-# Single-word codename suffixes / generics that over-match when they stand alone. A MULTI-word alias
-# containing one (e.g. "velvet tempest", "volt typhoon") is distinctive and kept — only the bare token
-# is dropped. Vendor taxonomies: CrowdStrike animals, Microsoft weather, Mandiant/Secureworks generics.
-_GENERIC = {
-    "group", "team", "unknown", "gang", "crew", "actor", "apt", "the",
-    "spider", "panda", "bear", "kitten", "tiger", "buffalo", "jackal", "ox", "lynx", "wolf",
-    "chollima", "leopard", "crane", "hawk", "pig", "spindle",
-    "tempest", "typhoon", "sleet", "storm", "blizzard", "cyclone", "sandstorm", "hail", "dust", "flood",
-}
-
-# Ordinary English words collide with incidental prose — a single-token "Cleaver" matched an HTTP/3
-# CVE headline that has nothing to do with the APT. Drop a SINGLE-TOKEN term that is a common English
-# word; multi-word ("Comment Crew") and digit-bearing (APT29) names are never touched, so a two-word
-# actor whose bare token is here still matches on its full name. This loses purely-single-word
-# common-word actors (e.g. "Silence") in exchange for precision — the right trade for an analyst board.
-# Curated + dependency-free on purpose: the cron stager copies only *.py, so no dictionary file can be
-# bundled; an operator extends this seed via the same field. Kept sorted for review.
-_ENGLISH_COMMON = frozenset("""
-access agent agents alert anchor anvil apex armor arrow attack attacker attackers aurora
-autonomous autumn avalanche azure beacon blaze botnet breach bridge bunker campaign cascade cedar
-chimera chisel cipher citadel cleaver client cobalt cobra comet comment condor cortex cosmos
-criminal criminals crimson current cypress dagger dragon drifter eagle eclipse ember equation
-exploit fabric falcon ferret fortress frost fusion galaxy gateway ghost glitch golden granite
-griffin hacker hammer harbor hidden hollow hornet hunter hydra intruder ivory javelin keeper
-kraken lance laurel legacy locust machete malware mantis marble matrix meteor mirage monsoon
-nebula needle nettle network nexus nomad onyx oracle origin otter patch phantom pliers portal
-prism pulse quantum quartz quiver rampart ranger ransomware rapier raven reaper relay remote
-report saber scarlet scorpion secure seeker sentinel serpent server shade shadow shield signal
-silence silver socket specter spectre sphinx spring static stealth summer surge switch target
-tempest thorn thread threat thunder titan tornado torrent tunnel typhoon update vault vector venom
-victim violet viper voltage warden weasel willow winter wizard wrench zenith
-""".split())
-
-# MULTI-WORD descriptions minted as actor names. The single-token rule above cannot reach these,
-# and a compositional rule ("every word is generic") CANNOT be used: real codenames are built from
-# common words too -- "Comment Crew" is APT1 and both its words are in the lists above, as are
-# "spider" and "typhoon" in Scattered Spider and Volt Typhoon. Word composition cannot tell a NAME
-# from a DESCRIPTION, so this is a curated phrase list, matched whole and lowercased.
-#
-# Every entry below was a live actor page on a real corpus. The cost is not a bad row on a board:
-# `recent_news` also ranks the actor-assessment-priority queue, so "Threat Actor" scored 58 matches
-# against 1 cited source and was scheduled for analysis ahead of every real adversary.
-_GENERIC_PHRASE = frozenset("""
-ai agent|ai agents|attack group|autonomous llm agent|cyber criminals|cybercriminal group
-hacker group|llm agent|llm agents|malware campaign|ransomware gang|ransomware gangs
-threat actor|threat actors|threat group|unknown actor|unknown threat actor
-""".strip().replace("\n", "|").split("|"))
-
-# Single-token BRAND / product / place proper nouns aren't English-dictionary words, so the list
-# above misses them — but they light up in security news constantly (a "Cleaver" APT carried the
-# alias "Alibaba", which matched an article about Alibaba's XQUIC library). No real actor is named a
-# bare vendor name, so dropping these as single tokens is safe; a multi-word alias is still kept.
-_BRAND_COMMON = frozenset("""
-adobe akamai alibaba amazon android apple azure baidu chrome cisco citrix cloudflare crowdstrike dell
-discord docker fastly fedora fireeye firefox fortinet github gitlab google huawei ibm intel juniper
-kaspersky linkedin linux mandiant mcafee meta microsoft mozilla netflix nginx nvidia okta openai
-oracle outlook paypal proton pulse rackspace reddit redhat safari samsung sharepoint slack snowflake
-sonicwall splunk symantec telegram tencent tesla twitter ubuntu vmware whatsapp windows yahoo zoom
-""".split())
-
+from actor_mentions import eligible, mentions, terms_for, _GENERIC_PHRASE
 
 # Source kinds that are NOT reporting. Everything else in `sources/` counts, including a kind
 # this list has never seen — the polarity matters. An include-list ("only source_kind == news")
@@ -120,8 +66,8 @@ EXCLUDED_KINDS = frozenset(
 
 def _split(p: Path) -> tuple[dict, str]:
     try:
-        txt = p.read_text(encoding="utf-8", errors="ignore")
-    except OSError:
+        txt = p.read_text(encoding="utf-8")
+    except (OSError, UnicodeError):
         return {}, ""  # page moved/deleted by a concurrent lane mid-scan
     m = _FM.match(txt)
     if not m:
@@ -134,19 +80,7 @@ def _split(p: Path) -> tuple[dict, str]:
 
 
 def _terms_for(fm: dict) -> set:
-    """Distinctive match terms from an actor's title + aliases (see module docstring for the rules)."""
-    out = set()
-    for nm in [fm.get("title")] + (fm.get("aliases") or []):
-        s = str(nm or "").strip().lower()
-        if not s:
-            continue
-        if s in _GENERIC_PHRASE:
-            continue                                     # a description, not a name -> matches everything
-        if " " not in s and (s in _GENERIC or s in _ENGLISH_COMMON or s in _BRAND_COMMON):
-            continue                                     # bare codename suffix / English word / brand -> too broad
-        if len(s) >= 5 or (len(s) >= 4 and any(c.isdigit() for c in s)):
-            out.add(s)
-    return out
+    return terms_for(fm)
 
 
 def _pub_date(fm: dict, path: Path) -> str:
@@ -175,8 +109,8 @@ def main(argv=None) -> int:
     ent = wiki / "entities"
     if ent.is_dir():
         for p in ent.rglob("*.md"):
-            fm, _ = _split(p)
-            if fm.get("type") != "actor":
+            fm, actor_body = _split(p)
+            if not eligible(fm, actor_body, wiki):
                 continue
             # A tombstoned actor is not a roster member. It was already skipped on the SOURCE
             # side; skipping it here too matters more, because a retired page left in the roster
@@ -195,25 +129,24 @@ def main(argv=None) -> int:
                     term2slug[t] = slug
     for t in ambiguous:
         term2slug.pop(t, None)
-    if not term2slug:
-        print("actor-news-activity: no usable actor name/alias terms")
-        print(json.dumps({"wakeAgent": False}))
-        return 0
-    master = re.compile(r"\b(" + "|".join(re.escape(t) for t in
-                        sorted(term2slug, key=len, reverse=True)) + r")\b", re.I)
 
     # 2) scan the news firehose; per actor: newest news date + a windowed count + a sample headline
     today = datetime.now(timezone.utc).date()
     win_lo = (today - timedelta(days=window)).isoformat()
     look_lo = (today - timedelta(days=lookback)).isoformat()
-    hits: dict[str, dict] = {}                        # slug -> {last, recent, sample}
+    hits: dict[str, dict] = {}                        # slug -> {last, recent, total, sample}
     nnews = 0
     ndated = 0                                        # dated sources in range, BEFORE kind filtering
     kinds_seen: dict[str, int] = {}
     src = wiki / "sources"
     if src.is_dir():
         for p in src.rglob("*.md"):
+            if p.name == "INDEX.md" or p.name.startswith(("_", ".")):
+                continue
             fm, body = _split(p)
+            if not fm:
+                print(f"ERROR: unreadable/unparseable source {p}; activity retained", file=sys.stderr)
+                return 1
             if str(fm.get("status") or "").lower() == "tombstoned":
                 continue    # a same-story duplicate merged into its winner — don't double-count it
             pub = _pub_date(fm, p)
@@ -233,9 +166,11 @@ def main(argv=None) -> int:
             nnews += 1
             title = str(fm.get("title") or "")
             text = f"{title}\n{body[:1500]}"
-            seen = {term2slug[m.group(1).lower()] for m in master.finditer(text)}
+            seen = mentions(text, term2slug)
             for slug in seen:
-                h = hits.setdefault(slug, {"last": "", "recent": 0, "sample": "", "refs": []})
+                h = hits.setdefault(slug, {"last": "", "recent": 0, "total": 0, "sample": "",
+                                           "refs": []})
+                h["total"] += 1                       # every match inside the lookback
                 if pub > h["last"]:
                     h["last"] = pub
                     h["sample"] = title[:70]
@@ -263,11 +198,9 @@ def main(argv=None) -> int:
                           "kinds_seen": kinds_seen}))
         return 1
 
-    if not hits:
-        print(f"actor-news-activity: scanned {nnews} of {ndated} dated source(s), "
-              "no actor names matched")
-        print(json.dumps({"wakeAgent": False}))
-        return 0
+    matched_actors = len(hits)
+    for slug in idx:
+        hits.setdefault(slug, {"last": "", "recent": 0, "total": 0, "sample": "", "refs": []})
 
     now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     ranked = sorted(hits.items(), key=lambda kv: (kv[1]["last"], kv[1]["recent"]), reverse=True)
@@ -283,22 +216,29 @@ def main(argv=None) -> int:
         # empty (recent_news_refs is NOT a _UNION_FIELDS member, so each run replaces wholesale
         # and refs age out with the window instead of accumulating).
         refs = [r for _, r in sorted(h["refs"], reverse=True)[:10]]
-        stamp = {"type": "actor", "news_last_seen": h["last"], "recent_news": h["recent"],
-                 "recent_news_refs": refs, "last_updated": now_iso}
+        stamp = {"news_last_seen": h["last"], "recent_news": h["recent"],
+                 "news_total": h["total"], "recent_news_refs": refs, "last_updated": now_iso}
         if args.dry_run:
             if stamped < 30:
-                print(f"  {h['last']}  news={h['recent']:>2}  {str(title)[:26]:26}  ← {h['sample']}")
+                print(f"  {h['last']}  news={h['recent']:>2}/{h['total']:<3} {str(title)[:26]:26}  "
+                      f"← {h['sample']}")
         else:
             _fm, body = _split(wiki / rel)
+            if not _fm or not eligible(_fm, body, wiki):
+                # Unreadable (moved by a concurrent lane, a permission flip) or unparseable. write_page
+                # REPLACES the body, so stamping with the empty body _split returns erased the page:
+                # APT10 and APT41 on one live vault, 2026-10-01. A missed stamp heals next run.
+                print(f"WARN: stamp {rel}: page unreadable or unparseable; not stamped", file=sys.stderr)
+                continue
             try:
-                write_page(wiki, rel, stamp, body, dry_run=False)
+                write_page(wiki, rel, stamp, body, dry_run=False, require_actor=True)
             except OSError as e:
                 print(f"WARN: stamp {rel}: {e}", file=sys.stderr)
                 continue
         stamped += 1
 
-    print(f"actor-news-activity: {nnews} news sources scanned, {len(term2slug)} terms "
-          f"({len(ambiguous)} dropped ambiguous), {len(hits)} actors matched "
+    print(f"actor-news-activity: {nnews} news sources scanned of {ndated} dated source(s), {len(term2slug)} terms "
+          f"({len(ambiguous)} dropped ambiguous), {matched_actors} actors matched, {len(hits)} actors recomputed "
           f"({'dry-run — nothing written' if args.dry_run else f'{stamped} stamped'})")
     print(json.dumps({"wakeAgent": False}))
     return 0

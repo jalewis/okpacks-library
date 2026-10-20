@@ -6,6 +6,50 @@ spec §12.2 — **Breaking** / **Additive** / **Editorial**. Format loosely foll
 
 [Keep a Changelog]: https://keepachangelog.com/
 
+## 0.3.10 — 2026-10-18
+
+- Require OKEngine v0.15.18 and retain the existing Hermes pin. Align the pack and
+  catalog release bindings with the merged engine used for qualification.
+
+Migration impact: Requires engine upgrade to v0.15.18; no stored-page migration.
+
+## 0.3.9 — 2026-10-03
+
+- Require OKEngine v0.15.3 and retain the existing Hermes pin. Align the pack and
+  catalog release bindings with the merged engine used for qualification.
+
+Migration impact: Requires engine upgrade to v0.15.3; no stored-page migration.
+
+## 0.3.8 — 2026-10-01
+
+- Require OKEngine v0.15.2 and Hermes v0.21.3 (`v2026.9.14`).
+
+Migration impact: none — runtime compatibility release only.
+
+## 0.3.7 — 2026-09-29
+
+- Require OKEngine v0.15.0 and Hermes v0.21.3 (`v2026.9.14`).
+
+Migration impact: none — runtime compatibility release only.
+
+## 0.3.6 — 2026-09-28
+
+- Require OKEngine v0.14.9 and Hermes v0.21.3 (`v2026.9.14`).
+
+Migration impact: none — runtime compatibility release only.
+
+## 0.3.5 — 2026-09-27
+
+- Require OKEngine v0.14.8 and Hermes v0.21.3 (`v2026.9.14`).
+
+Migration impact: none — runtime compatibility release only.
+
+## 0.3.4 — 2026-09-26
+
+- Require OKEngine v0.14.7 and Hermes v0.21.3 (`v2026.9.14`).
+
+Migration impact: none — runtime compatibility release only.
+
 ## 0.3.3 — 2026-09-19
 
 - Require OKEngine v0.14.5 and Hermes v0.21.3 (`v2026.9.14`).

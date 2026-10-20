@@ -38,3 +38,17 @@ def test_line_aware_existing_parser_accepts_url_hyphens(tmp_path):
     path.write_text("---\ntype: actor\ntitle: DragonForce\n"
                     "url: https://example.test/?source=rss------2\n---\n\nBody\n")
     assert module.primary_actor_index(tmp_path)["dragonforce"] == "entities/d/dragonforce.md"
+
+
+if __name__ == "__main__":
+    # conformance-all.sh runs this file as a SCRIPT. Without this block the module merely defined
+    # its tests and exited 0, so the suite passed in the conformance lane having asserted nothing
+    # (and misp_galaxy_import.py measured as unexercised there). Found while fixing #96.
+    import tempfile
+    from pathlib import Path as _Path
+
+    for case in (test_primary_index_does_not_treat_shared_short_alias_as_identity,
+                 test_line_aware_existing_parser_accepts_url_hyphens):
+        with tempfile.TemporaryDirectory() as tmp:
+            case(_Path(tmp))
+    print("ok")

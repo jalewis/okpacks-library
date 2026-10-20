@@ -40,6 +40,8 @@ def _fetch(url: str) -> dict:
         return json.loads(r.read().decode("utf-8"))
 
 
+from actor_mentions import eligible, terms_for
+
 def index_actors(vault: Path) -> dict:
     """name/alias (lowercased) -> relative page path, over existing type:actor pages."""
     idx = {}
@@ -58,11 +60,12 @@ def index_actors(vault: Path) -> dict:
             fm = yaml.safe_load(txt[3:end]) if end != -1 else None
         except yaml.YAMLError:
             fm = None
-        if not isinstance(fm, dict) or fm.get("type") != "actor":
+        body = txt[end + 4:] if end != -1 else txt
+        if not isinstance(fm, dict) or not eligible(fm, body, vault):
             continue
         rel = str(p.relative_to(vault))
         for name in [fm.get("title"), fm.get("id")] + list(fm.get("aliases") or []):
-            if name:
+            if name and (str(name).casefold() in terms_for(fm) or name == fm.get("id")):
                 idx.setdefault(str(name).lower(), rel)
     return idx
 
@@ -81,7 +84,8 @@ def primary_actor_index(vault: Path) -> dict[str, str]:
             fm = yaml.safe_load(text[3:end]) if end != -1 else None
         except yaml.YAMLError:
             fm = None
-        if not isinstance(fm, dict) or fm.get("type") != "actor":
+        body = text[end + 4:] if end != -1 else text
+        if not isinstance(fm, dict) or not eligible(fm, body, vault):
             continue
         rel = str(path.relative_to(vault))
         for value in (fm.get("title"), fm.get("name"), fm.get("id")):
@@ -107,7 +111,7 @@ def main(argv: list[str] | None = None) -> int:
 
     idx = index_actors(vault)
     primary_idx = primary_actor_index(vault)
-    enriched = created = errs = 0
+    enriched = created = errs = collisions = 0
     for v in galaxy.get("values", []):
         name = (v.get("value") or "").strip()
         if not name:
@@ -141,7 +145,10 @@ def main(argv: list[str] | None = None) -> int:
                 body = (f"# {name}\n\n{clean(v.get('description') or '')}\n\n"
                         "> Seeded no_agent from the MISP threat-actor galaxy (not in MITRE ATT&CK). "
                         "Low-trust — verify before relying on attribution.")
-                write_page(vault, f"entities/{key}.md", fm, body, dry_run=args.dry_run)
+                if write_page(vault, f"entities/{key}.md", fm, body,
+                              dry_run=args.dry_run) == "collision":
+                    collisions += 1          # refused: a live page differs only by separators
+                    continue
                 idx[name.lower()] = f"entities/{key}.md"
                 created += 1
         except OSError as e:
@@ -149,6 +156,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"WARN: {name}: {e}", file=sys.stderr)
 
     print(f"misp-galaxy: {enriched} actor(s) alias-enriched, {created} created"
+          f"{f', {collisions} refused on weak-identity collision' if collisions else ''}"
           f"{f', {errs} error(s)' if errs else ''}")
     print(json.dumps({"wakeAgent": False}))
     return 0

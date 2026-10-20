@@ -44,6 +44,7 @@
   {
     "id": "b2e1d8a4f3c5",
     "name": "okpack-ai-research-weekly-brief",
+    "max_iterations": 16,
     "enabled": true,
     "output_contract": {
       "api": 1,

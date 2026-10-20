@@ -129,9 +129,12 @@ def main(argv: list[str] | None = None) -> int:
         if args.dry_run:
             written += 1
             continue
-        # write to the canonical shard the reshelve drain would choose, and drop any stale copy at a
-        # different path so repeated runs converge instead of doubling (okengine#54).
-        dest = vault / (okf_migrate.canonical_key(root, "cves", cid, fm) + ".md")
+        # write to the seat a WRITER must use, and drop any stale copy at a different path so
+        # repeated runs converge instead of doubling (okengine#54). write_key, not canonical_key:
+        # `cves` declares `reshard_by: day`, and canonical_key returns the base bucket one level
+        # above where reshard_oversized keeps a split one — minting there leaves a stray for the
+        # nightly sweep to push down and every stored path stale until it does (okengine#818).
+        dest = vault / (okf_migrate.write_key(root, "cves", cid, fm) + ".md")
         try:
             dest.parent.mkdir(parents=True, exist_ok=True)
             head = yaml.safe_dump(fm, sort_keys=False, allow_unicode=True).rstrip()

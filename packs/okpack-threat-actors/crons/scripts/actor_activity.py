@@ -26,12 +26,13 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _okf_write import content_root, write_page  # noqa: E402
+from actor_mentions import eligible, terms_for, explicit_mention_supported
 
 
 def _split(p: Path) -> tuple[dict, str]:
     try:
-        txt = p.read_text(encoding="utf-8", errors="ignore")
-    except OSError:
+        txt = p.read_text(encoding="utf-8")
+    except (OSError, UnicodeError):
         return {}, ""  # page moved/deleted by a concurrent lane mid-scan
     if not txt.startswith("---"):
         return {}, txt
@@ -50,8 +51,8 @@ def _actor_index(wiki: Path) -> dict:
     ent = wiki / "entities"
     if ent.exists():
         for p in ent.rglob("*.md"):
-            fm, _ = _split(p)
-            if fm.get("type") == "actor":
+            fm, body = _split(p)
+            if eligible(fm, body, wiki):
                 out[p.stem] = (fm.get("title") or p.stem, str(p.relative_to(wiki)))
     return out
 
@@ -66,19 +67,34 @@ def main(argv: list[str] | None = None) -> int:
     wiki = content_root(Path(args.vault))
 
     cutoff = (datetime.now(timezone.utc) - timedelta(days=args.recent_days)).strftime("%Y-%m-%d")
-    counts: dict[str, dict] = {}
+    idx = _actor_index(wiki)
+    counts: dict[str, dict] = {slug: {"recent": 0, "total": 0} for slug in idx}
     src = wiki / "sources"
     nsrc = 0
     if src.exists():
         for p in src.rglob("*.md"):
-            fm, _ = _split(p)
+            if p.name == "INDEX.md" or p.name.startswith(("_", ".")):
+                continue
+            fm, source_body = _split(p)
+            if not fm:
+                print(f"ERROR: unreadable/unparseable source {p}; report activity retained", file=sys.stderr)
+                return 1
+            if str(fm.get("status") or "").casefold() == "tombstoned":
+                continue
             mentions = fm.get("mentions_actors") or []
             if not mentions:
                 continue
             nsrc += 1
             pub = str(fm.get("published") or "")[:10]
-            for a in mentions:
-                rec = counts.setdefault(str(a), {"recent": 0, "total": 0})
+            for a in set(map(str, mentions)):
+                if a not in idx:
+                    continue
+                actor_fm, actor_body = _split(wiki / idx[a][1])
+                if not eligible(actor_fm, actor_body, wiki):
+                    continue
+                if not explicit_mention_supported(str(fm.get("title") or "") + "\n" + source_body, terms_for(actor_fm)):
+                    continue
+                rec = counts[a]
                 rec["total"] += 1
                 if pub and pub >= cutoff:
                     rec["recent"] += 1
@@ -88,7 +104,6 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"wakeAgent": False}))
         return 0
 
-    idx = _actor_index(wiki)
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     # 1) stamp recent_reports + total_mentions onto each actor page (feeds the cockpit watchlist ranking)
@@ -98,6 +113,8 @@ def main(argv: list[str] | None = None) -> int:
             continue
         _title, rel = idx[slug]
         _fm, body = _split(wiki / rel)
+        if not _fm or not eligible(_fm, body, wiki):
+            continue
         # `recent` is a subset of `total` by construction (it only increments inside the total
         # branch). Clamp anyway so a value that drifted above total from another writer — an agent
         # once hand-set `recent_reports` to a list of source paths (len) — is corrected on every run.
@@ -108,11 +125,11 @@ def main(argv: list[str] | None = None) -> int:
         # last_updated: the cockpit watchlist's moved_field — write_page merges but does not bump the
         # envelope, and imported actor pages carry no `updated` at all, so without this stamp the
         # "Recently moved / Gone quiet" sections are permanently empty.
-        stamp = {"type": "actor", "recent_reports": recent, "total_mentions": c["total"],
+        stamp = {"recent_reports": recent, "total_mentions": c["total"],
                  "activity_tier": atier,
                  "last_updated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
         try:
-            write_page(wiki, rel, stamp, body, dry_run=args.dry_run)
+            write_page(wiki, rel, stamp, body, dry_run=args.dry_run, require_actor=True)
             stamped += 1
         except OSError as e:
             print(f"WARN: stamp {rel}: {e}", file=sys.stderr)

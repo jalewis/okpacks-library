@@ -49,7 +49,24 @@ def engine(tmp_path):
         "engine-template": ["raw-backfill", "page-quality-enrich"],
         "domain": [],
     }), encoding="utf-8")
+    write_engine_rule(tmp_path / "engine", ENGINE_RULE)
     return tmp_path / "engine"
+
+
+# The engine's writer-name rule, as a stand-in checkout provides it. The checker loads this from
+# ENGINE_DIR rather than carrying its own copy, so a test engine has to supply one, exactly as it
+# supplies engine-crons.json. Short names are identical under the bounded rule (okengine#840).
+ENGINE_RULE = """
+import re
+def contract_writer_name(job_name):
+    return "okengine-write-" + re.sub(r"[^a-z0-9]+", "-", job_name.lower()).strip("-")
+"""
+
+
+def write_engine_rule(engine_dir: pathlib.Path, source: str) -> None:
+    scripts = engine_dir / "scripts"
+    scripts.mkdir(parents=True, exist_ok=True)
+    (scripts / "cron_pack_split.py").write_text(source, encoding="utf-8")
 
 
 def write_pack(root: pathlib.Path, name: str, prompts: dict, domain=None):
@@ -63,17 +80,54 @@ def write_pack(root: pathlib.Path, name: str, prompts: dict, domain=None):
 
 # --- the derivation itself ----------------------------------------------------------------
 
-def test_a_contracted_model_lane_binds_its_own_writer():
+def test_a_contracted_model_lane_binds_its_own_writer(engine):
     """`bind_contract_writers` routes a contracted lane away from the generic/admin writer."""
     job = {"name": "page-quality-enrich", "output_contract": {"api": 1}}
-    assert mod.expected_writer(job) == "okengine-write-page-quality-enrich"
+    rule = mod.engine_writer_name(engine)
+    assert mod.expected_writer(job, rule) == "okengine-write-page-quality-enrich"
 
 
-def test_an_uncontracted_lane_and_a_script_lane_both_keep_the_generic_writer():
+def test_an_uncontracted_lane_and_a_script_lane_both_keep_the_generic_writer(engine):
     """Two different reasons to stay generic: no contract at all, and no_agent."""
-    assert mod.expected_writer({"name": "raw-backfill"}) == "okengine-write"
+    rule = mod.engine_writer_name(engine)
+    assert mod.expected_writer({"name": "raw-backfill"}, rule) == "okengine-write"
     assert mod.expected_writer(
-        {"name": "x", "no_agent": True, "output_contract": {"api": 1}}) == "okengine-write"
+        {"name": "x", "no_agent": True, "output_contract": {"api": 1}}, rule) == "okengine-write"
+
+
+def test_the_checker_follows_the_engines_rule_not_a_copy_of_its_own(tmp_path, engine):
+    """The okengine#840 failure: a mirrored rule kept certifying names the engine had stopped
+    producing. Give the stand-in engine a rule no copy could have guessed, and the checker must
+    expect exactly what it says."""
+    write_engine_rule(engine, 'def contract_writer_name(n):\n    return "okengine-write-x" + str(len(n))\n')
+    packs = write_pack(tmp_path / "packs", "okpack-demo",
+                       {"page-quality-enrich": "call mcp__okengine_write_x19__append_to_section"})
+    failures, _, _ = mod.check(packs, engine)
+    assert failures == [], failures
+    packs2 = write_pack(tmp_path / "packs2", "okpack-demo",
+                        {"page-quality-enrich":
+                         "call mcp__okengine_write_page_quality_enrich__append_to_section"})
+    failures, _, _ = mod.check(packs2, engine)
+    assert len(failures) == 1 and "okengine_write_x19" in failures[0], failures
+
+
+def test_an_unloadable_engine_rule_is_undetectable_not_a_pass(tmp_path, engine):
+    """No rule means no expected writer: that is not knowledge that every prompt is right."""
+    write_engine_rule(engine, "raise ImportError('broken engine checkout')\n")
+    packs = write_pack(tmp_path / "packs", "okpack-demo",
+                       {"raw-backfill": "call mcp__okengine_write__create_entity"})
+    failures, _, _ = mod.check(packs, engine)
+    assert len(failures) == 1 and "UNDETECTABLE" in failures[0], failures
+    assert "cron_pack_split.py" in failures[0]
+
+
+def test_an_early_failure_prints_its_reason(tmp_path, engine, capsys, monkeypatch):
+    """A failure that stops the check before it examines anything must still say why."""
+    monkeypatch.setenv("ENGINE_DIR", str(engine))
+    write_engine_rule(engine, "raise ImportError('broken engine checkout')\n")
+    packs = write_pack(tmp_path / "packs", "okpack-demo", {"raw-backfill": "x"})
+    assert mod.main([str(packs)]) == 1
+    assert "broken engine checkout" in capsys.readouterr().out
 
 
 def test_the_hermes_tool_name_maps_every_non_word_character():
@@ -204,3 +258,56 @@ def test_the_real_packs_pass_against_the_real_engine_when_one_is_available(monke
     failures, packs, prompts = mod.check(REPO / "packs", pathlib.Path(engine))
     assert packs > 0 and prompts > 0
     assert failures == [], "\n".join(failures)
+
+
+# --- selector scripts are prompt text too -------------------------------------------------
+
+def write_selector(root: pathlib.Path, pack: str, name: str, body: str) -> None:
+    scripts = root / pack / "crons" / "scripts"
+    scripts.mkdir(parents=True, exist_ok=True)
+    (scripts / name).write_text(body, encoding="utf-8")
+
+
+def test_a_selector_naming_a_stale_writer_fails(tmp_path, engine):
+    """The digest a selector prints is what the model reads; a writer it names is a prompt."""
+    packs = write_pack(tmp_path / "packs", "okpack-demo", {},
+                       domain=[{"name": "demo-digest", "script": "select_demo.py",
+                                "output_contract": {"api": 1}, "prompt": "go"}])
+    write_selector(packs, "okpack-demo", "select_demo.py",
+                   'print("write via mcp__okengine_write__create_entity")\n')
+    failures, _, _ = mod.check(packs, engine)
+    assert len(failures) == 1 and "select_demo.py" in failures[0], failures
+    assert "mcp__okengine_write_demo_digest__create_entity" in failures[0]
+
+
+def test_a_selector_naming_its_jobs_writer_passes(tmp_path, engine):
+    packs = write_pack(tmp_path / "packs", "okpack-demo", {},
+                       domain=[{"name": "demo-digest", "script": "select_demo.py",
+                                "output_contract": {"api": 1}, "prompt": "go"}])
+    write_selector(packs, "okpack-demo", "select_demo.py",
+                   'print("write via mcp__okengine_write_demo_digest__create_entity")\n')
+    assert mod.check(packs, engine)[0] == []
+
+
+def test_a_selector_shared_by_two_jobs_may_name_either_writer(tmp_path, engine):
+    """One script, two lanes: naming either lane's writer is right, a third is not."""
+    domain = [{"name": "digest-a", "script": "select_shared.py",
+               "output_contract": {"api": 1}, "prompt": "go"},
+              {"name": "digest-b", "script": "select_shared.py",
+               "output_contract": {"api": 1}, "prompt": "go"}]
+    packs = write_pack(tmp_path / "packs", "okpack-demo", {}, domain=domain)
+    write_selector(packs, "okpack-demo", "select_shared.py",
+                   'A = "mcp__okengine_write_digest_a__create_entity"\n'
+                   'B = "mcp__okengine_write_digest_b__update_entity"\n')
+    assert mod.check(packs, engine)[0] == []
+    write_selector(packs, "okpack-demo", "select_shared.py",
+                   'C = "mcp__okengine_write_digest_c__create_entity"\n')
+    failures, _, _ = mod.check(packs, engine)
+    assert len(failures) == 1 and "digest_c" in failures[0], failures
+
+
+def test_a_job_whose_selector_is_absent_is_left_to_the_existence_check(tmp_path, engine):
+    packs = write_pack(tmp_path / "packs", "okpack-demo", {},
+                       domain=[{"name": "demo-digest", "script": "select_missing.py",
+                                "output_contract": {"api": 1}, "prompt": "go"}])
+    assert mod.check(packs, engine)[0] == []

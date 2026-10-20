@@ -68,7 +68,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     idx = index_actors(vault)
-    enriched = created = errs = 0
+    enriched = created = errs = collisions = 0
     for r in records:
         name = (r.get("Threat actor name") or "").strip()
         if not name:
@@ -92,7 +92,10 @@ def main(argv: list[str] | None = None) -> int:
                 body = (f"# {name}\n\n"
                         "> Seeded no_agent from the Microsoft threat-actor naming taxonomy "
                         "(not in MITRE ATT&CK or the MISP galaxy). Low-trust — verify attribution.")
-                write_page(vault, f"entities/{key[:1] or '_'}/{key}.md", fm, body, dry_run=args.dry_run)
+                if write_page(vault, f"entities/{key[:1] or '_'}/{key}.md", fm, body,
+                              dry_run=args.dry_run) == "collision":
+                    collisions += 1          # refused: a live page differs only by separators
+                    continue
                 idx[name.lower()] = f"entities/{key[:1] or '_'}/{key}.md"
                 for n in all_names:
                     idx.setdefault(n.lower(), f"entities/{key[:1] or '_'}/{key}.md")
@@ -101,7 +104,11 @@ def main(argv: list[str] | None = None) -> int:
             errs += 1
             print(f"WARN: {name}: {e}", file=sys.stderr)
 
+    # Every refused record is REPORTED, never silently dropped: the lane now survives a weak-
+    # identity clash instead of dying on it, so the count is the only thing that keeps those
+    # records visible for the identity decision they need.
     print(f"msft-mapping: {enriched} actor(s) alias-enriched, {created} created (of {len(records)})"
+          f"{f', {collisions} refused on weak-identity collision' if collisions else ''}"
           f"{f', {errs} error(s)' if errs else ''}")
     print(json.dumps({"wakeAgent": False}))
     return 0

@@ -9,6 +9,9 @@ from pathlib import Path
 
 import yaml
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _identity_standins  # noqa: E402  (stand-ins for engine identity libs a pack-only run lacks)
+
 PACK = Path(__file__).resolve().parent.parent
 SCRIPTS = PACK / "crons" / "scripts"
 LIB_ROOT = PACK.parents[2]
@@ -48,6 +51,7 @@ def test_attack_records_are_directly_disposed_by_policy():
         sys.path.insert(0, str(scripts))
         sys.modules.pop("_okf_write", None)
         attack = _load("attack_import_test", scripts / "attack_import.py")
+        _identity_standins.install(sys.modules["_okf_write"])   # a create needs identity (#105)
         obj = {"type": "intrusion-set", "id": "intrusion-set--1", "name": "APT One",
                "modified": "2026-07-19T12:34:56.789Z",
                "external_references": [{"source_name": "mitre-attack", "external_id": "G0001",

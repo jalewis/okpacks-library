@@ -144,6 +144,7 @@ def test_the_zero_match_message_shows_both_numbers(tmp_path, monkeypatch, capsys
     rc, out = _run(mod, vault, monkeypatch, capsys)
     assert rc == 0
     assert "of 1 dated source(s)" in out.out
+    assert "0 actors matched, 1 actors recomputed" in out.out
 
 
 def test_a_tombstoned_actor_is_not_a_roster_member(tmp_path, monkeypatch, capsys):
@@ -183,3 +184,26 @@ def _fm_of(path):
     import yaml
     text = path.read_text(encoding="utf-8")
     return yaml.safe_load(text.split("---", 2)[1]) or {}
+
+
+def test_a_page_that_cannot_be_read_at_stamp_time_is_skipped_never_blanked(tmp_path, monkeypatch, capsys):
+    """2026-10-01: _split returns ({}, "") for an unreadable page, and write_page REPLACES the body,
+    so the stamp erased APT10's and APT41's bodies on a live vault."""
+    mod = _mod()
+    vault = _vault(tmp_path, [("news", "2026-08-20")])
+    page = tmp_path / "wiki" / "entities" / "s" / "scattered-spider.md"
+    real_split, calls = mod._split, {"n": 0}
+
+    def flaky(p):
+        if Path(p).name == page.name:
+            calls["n"] += 1
+            if calls["n"] > 1:            # readable while indexing, gone by the time it is stamped
+                return {}, ""
+        return real_split(p)
+
+    monkeypatch.setattr(mod, "_split", flaky)
+    rc, out = _run(mod, vault, monkeypatch, capsys, argv=())
+    assert rc == 0
+    assert calls["n"] > 1, "the stamp pass must re-read the page"
+    assert "body" in page.read_text(encoding="utf-8")
+    assert "not stamped" in out.err

@@ -20,11 +20,17 @@ import json
 import os
 import re
 import unicodedata
+from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
 
-FM = re.compile(r"\A---\s*\n(.*?\n)---", re.S)
+# Front matter ends at a delimiter LINE (okpacks-library#102). The old closer, a bare "---", matched
+# the first line merely BEGINNING with three dashes, so a page another writer had damaged (a stray
+# `---tail` line inside its header) read here as a short, valid header whose url stopped mid-string,
+# and this lane "repaired" that url -- feeding the damaging writer's next split. Same line-anchored
+# form as the engine's front-matter readers.
+FM = re.compile(r"\A---[ \t]*\n(.*?\n)---[ \t]*(?:\n|\Z)", re.S)
 
 
 def norm(t: str) -> str:
@@ -119,7 +125,8 @@ def main() -> int:
         return None
 
     fixed = agreed = retitled = 0
-    fixes: list[str] = []
+    fixes: list[dict[str, str]] = []
+    unparseable: list[str] = []
     for p in (wiki / "sources").rglob("*.md"):
         if p.name.startswith(("INDEX", "_")):
             continue
@@ -130,6 +137,10 @@ def main() -> int:
         m = FM.match(txt)
         fm = _fm(p)
         if not (m and fm):
+            if txt.startswith("---"):
+                # Has front matter this lane cannot read whole. Editing it would act on a partial
+                # view, so it is left byte-identical and named instead.
+                unparseable.append(p.relative_to(wiki).as_posix())
             continue
         t = norm(str(fm.get("title") or fm.get("name") or ""))
         if not t or t in dup:
@@ -170,14 +181,32 @@ def main() -> int:
                     break
         p.write_text(txt, encoding="utf-8")
         fixed += 1
-        fixes.append(f"  {p.relative_to(wiki)}: -> {real}")
+        fixes.append({"page": p.relative_to(wiki).as_posix(), "url": real})
 
     print(f"url-reconcile: {len(raw_by_title)} raw items · {agreed} pages already correct · "
-          f"{fixed} FIXED ({retitled} titles healed) · {len(dup)} ambiguous title(s) skipped")
-    for line in fixes[:20]:
-        print(line)
+          f"{fixed} FIXED ({retitled} titles healed) · {len(dup)} ambiguous title(s) skipped · "
+          f"{len(unparseable)} unreadable page(s) skipped")
+    for row in fixes[:20]:
+        print(f"  {row['page']}: -> {row['url']}")
+    _write_receipt(vault, {"raw_items": len(raw_by_title), "agreed": agreed, "fixed": fixed,
+                           "retitled": retitled, "ambiguous": len(dup), "fixes": fixes,
+                           "unparseable": sorted(unparseable)})
     print(json.dumps({"wakeAgent": False}))
     return 0
+
+
+def _write_receipt(vault: Path, receipt: dict) -> None:
+    """Every write, named, somewhere a silent run keeps. A silent cron run discards stdout, so the
+    fix list printed above was the lane's only record -- and it was lost on every run."""
+    path = vault / ".okengine" / "url-reconcile-receipt.json"
+    receipt = {"run_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), **receipt}
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        tmp.replace(path)
+    except OSError as exc:
+        print(f"url-reconcile: WARNING receipt not written ({exc})")
 
 
 if __name__ == "__main__":

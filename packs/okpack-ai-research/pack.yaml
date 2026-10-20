@@ -2,7 +2,7 @@
 # `framework_validate.py` shape-checks this; at deploy the engine validates the
 # whole composed set (disjoint ownership, requires present, single trust level).
 name: okpack-ai-research
-version: 0.3.4
+version: 0.3.17
 description: "AI / LLM research watch"
 mission: >-
   Tracks models, labs, methods and benchmarks from papers and release feeds, so a reader can follow the research frontier from the vault instead of the firehose.

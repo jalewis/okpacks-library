@@ -1,10 +1,21 @@
 #!/usr/bin/env python3
 """Lint engine-template prompts for contract defect classes we have EVIDENCE for.
 
-Two classes, deliberately no more. Speculative rules would put us back to rewriting
+Three classes, deliberately no more. Speculative rules would put us back to rewriting
 prose on a hunch, which is what this lint exists to replace.
 
 ENFORCED (fails the gate)
+  receipt instruction on lanes whose runner verifies a receipt (library#108).
+    The runner verifies a fenced okengine-receipt iff the lane's output_contract says
+    completion: per-selected-item, and the lane's selector prints the receipt the model
+    must copy. Neither fact is in the prompt, so a prompt-text check cannot see a prompt
+    that never mentions the receipt: every pack's concept-backfill (and five packs'
+    page-quality-enrich) shipped that way. This check derives the requirement from the
+    ENGINE (engine-crons.json + the selector source under ENGINE_DIR), not from the
+    prompt. A per-item lane whose selector prints no receipt is REPORTED, not failed: the
+    prompt has nothing to copy, and the fix is in the engine (okengine#799). Without
+    ENGINE_DIR the check says it is UNDETECTABLE and, under CI, fails.
+
   action-phase directive on receipt-producing lanes.
     A lane that reads-then-writes and is not told to act once grounded resolves the
     ambiguity toward reconnaissance: the inference host measured tool selection at
@@ -27,6 +38,7 @@ Handling only the first silently skips packs -- it hid okpack-example from the f
 from __future__ import annotations
 
 import json
+import os
 import pathlib
 import sys
 
@@ -47,11 +59,83 @@ def prompt_text(value) -> str:
     return ""
 
 
+RECEIPT_FENCE = "okengine-receipt"
+# How an engine selector prints the receipt: a literal fence, or the shared helper.
+SELECTOR_RECEIPT_MARKS = (RECEIPT_FENCE, "print_receipt_template(")
+
+
+def engine_receipt_facts(engine_dir: pathlib.Path) -> dict[str, dict]:
+    """Per engine lane: whether the runner verifies a receipt, and whether its selector prints one.
+
+    Mirrors the runner's own condition (cron-plus _verify_receipt: completion ==
+    per-selected-item) rather than a hand-kept list, so a lane that gains a receipt
+    contract is covered the day the engine ships it.
+    """
+    doc = json.loads((engine_dir / "config" / "engine-crons.json").read_text(encoding="utf-8"))
+    jobs = doc.get("jobs", []) if isinstance(doc, dict) else doc
+    facts: dict[str, dict] = {}
+    for job in jobs if isinstance(jobs, list) else []:
+        if not isinstance(job, dict) or not isinstance(job.get("name"), str):
+            continue
+        script = job.get("script")
+        selector = (engine_dir / "scripts" / "cron" / pathlib.Path(script).name
+                    if isinstance(script, str) and script else None)
+        source = None
+        if selector is not None and selector.is_file():
+            source = selector.read_text(encoding="utf-8", errors="replace")
+        facts[job["name"]] = {
+            "contract": job.get("output_contract"),
+            "selector": selector.name if selector else None,
+            "prints_receipt": (None if source is None
+                               else any(m in source for m in SELECTOR_RECEIPT_MARKS)),
+        }
+    return facts
+
+
+def receipt_findings(pack: str, lane: str, value, text: str,
+                     facts: dict[str, dict]) -> tuple[list[str], list[str]]:
+    """(failures, reported) for one prompt against the engine's receipt contract."""
+    fact = facts.get(lane)
+    if fact is None:
+        return [], []                    # unknown key: check_prompt_bindings' verdict
+    contract = value.get("output_contract") if isinstance(value, dict) else None
+    if not isinstance(contract, dict):
+        contract = fact["contract"]
+    if not isinstance(contract, dict) or contract.get("completion") != "per-selected-item":
+        return [], []                    # the runner verifies no receipt for this lane
+    if fact["prints_receipt"] is None:
+        return ([f"{pack}/{lane}: per-item lane but its selector "
+                 f"{fact['selector'] or '(none declared)'} is unreadable under ENGINE_DIR — "
+                 "receipt requirement UNDETECTABLE, not a pass"], [])
+    if not fact["prints_receipt"]:
+        return [], [f"{pack}/{lane}: runner verifies a receipt its selector "
+                    f"{fact['selector']} never prints (engine-side, okengine#799)"]
+    if RECEIPT_FENCE not in text:
+        return ([f"{pack}/{lane}: selector {fact['selector']} prints an {RECEIPT_FENCE} the "
+                 "runner verifies, but the prompt never tells the model to return it "
+                 "(add the exact-receipt instruction — library#108)"], [])
+    return [], []
+
+
+def load_engine_facts() -> tuple[dict[str, dict] | None, str]:
+    engine = os.environ.get("ENGINE_DIR") or os.environ.get("OKENGINE_DIR")
+    if not engine or not (pathlib.Path(engine) / "config" / "engine-crons.json").is_file():
+        return None, ("receipt-requirement check SKIPPED — no ENGINE_DIR checkout, so which "
+                      "lanes owe a receipt is UNDETECTABLE (set ENGINE_DIR=<engine checkout>)")
+    facts = engine_receipt_facts(pathlib.Path(engine))
+    if not facts:
+        return None, f"engine checkout at {engine} yielded no jobs — UNDETECTABLE, not a pass"
+    return facts, f"receipt requirements derived from {engine}"
+
+
 def main(argv: list[str]) -> int:
     root = pathlib.Path(argv[0]) if argv else pathlib.Path("packs")
     failures: list[str] = []
     reported: list[str] = []
     checked = 0
+    facts, engine_note = load_engine_facts()
+    if facts is None and os.environ.get("CI"):
+        failures.append(f"{engine_note} — required in CI")
 
     for path in sorted(root.glob("*/crons/engine-template-prompts.json")):
         pack = path.parts[-3]
@@ -65,6 +149,10 @@ def main(argv: list[str]) -> int:
             if not text:
                 continue
             checked += 1
+            if facts is not None:
+                lane_failures, lane_reported = receipt_findings(pack, lane, value, text, facts)
+                failures.extend(lane_failures)
+                reported.extend(lane_reported)
             if not any(m in text for m in RECEIPT_MARKERS):
                 continue                       # not a receipt-disposing lane
             if ACTION_MARK not in text.lower():
@@ -78,9 +166,9 @@ def main(argv: list[str]) -> int:
             if echoed:
                 reported.append(f"{pack}/{lane}: asks the model to echo {', '.join(echoed)}")
 
-    print(f"prompt-lint: {checked} prompt(s) checked")
+    print(f"prompt-lint: {checked} prompt(s) checked; {engine_note}")
     if reported:
-        print(f"\n  KNOWN (okengine#469 — blocked on the verifier, not failing here):")
+        print(f"\n  KNOWN (okengine#469 / okengine#799 — engine-side, not failing here):")
         for r in reported:
             print(f"    · {r}")
     if failures:

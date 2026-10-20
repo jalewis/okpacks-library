@@ -32,6 +32,8 @@ python3 "$ROOT/scripts/lint_prompts.py" "$ROOT/packs" || fail=1
 # Without ENGINE_DIR the script SAYS it could not check rather than reporting a pass.
 echo "==> prompt bindings (keys resolve to a live lane; writer names match what it binds)"
 python3 "$ROOT/scripts/check_prompt_bindings.py" "$ROOT/packs" || fail=1
+echo "==> engine cron regen (the step a deploy runs; every pack must survive it — library#103)"
+python3 "$ROOT/scripts/check_engine_regen.py" "$ROOT/packs" || fail=1
 echo "==> vendored validators are byte-identical (to each other, and to the engine skeleton)"
 python3 "$ROOT/scripts/check_vendored_validators.py" "$ROOT/packs" || fail=1
 if [ "$fail" = 0 ]; then

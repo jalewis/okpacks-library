@@ -58,24 +58,33 @@ def test_hf_slug_keeps_org_prefix():
     assert m.hf_slug("meta-llama/Llama-3.1-8B-Instruct") == "meta-llama-llama-31-8b-instruct"
 
 
-def test_hf_import_creates_conformant_pages_idempotent():
+def test_hf_import_renders_conformant_model_pages():
+    """Every page the importer would mint conforms to schema.yaml. (Creation itself needs the
+    engine identity libs and is tested against them in tests/test_ai_research_hf_models_import.py.)"""
     m = _load("okpack_ai_research_hf_import")
     schema = _schema()
+    recs = m.model_records(_HF)
+    assert len(recs) == 4
+    for rec in recs:
+        fm = _frontmatter(m.render_model(rec, "2026-06-20"))
+        assert fm, f"{rec['id']}: unparseable frontmatter"
+        errs = check_page(fm, schema)
+        assert not errs, f"{rec['id']}: {errs}"
+    ds = m.render_model(next(r for r in recs if r["id"] == "deepseek-ai/DeepSeek-R1"), "2026-06-20")
+    assert "lab: '[[deepseek-ai]]'" in ds and "release_status: released" in ds
+
+
+def test_hf_import_creates_nothing_without_the_engine_identity_libs():
+    """A pack-only checkout cannot tell whether a model page already exists anywhere in the
+    vault, so it must not create one (okpacks-library#104)."""
+    m = _load("okpack_ai_research_hf_import")
+    if not m.missing_identity_libs():
+        return                                  # engine libs importable here: covered in tests/
     with tempfile.TemporaryDirectory() as t:
         v = Path(t)
         c = m.import_models(_HF, v, "2026-06-20")
-        assert c == {"created": 4, "exists": 0, "total": 4}
-        pages = list((v / "wiki" / "entities").rglob("*.md"))
-        assert len(pages) == 4
-        for p in pages:                                             # every minted page is conformant
-            fm = _frontmatter(p.read_text(encoding="utf-8"))
-            assert fm, f"{p.name}: unparseable frontmatter"
-            errs = check_page(fm, schema)
-            assert not errs, f"{p.name}: {errs}"
-        ds = (v / "wiki" / "entities" / "d" / "deepseek-ai-deepseek-r1.md").read_text()
-        assert "lab: '[[deepseek-ai]]'" in ds and "release_status: released" in ds
-        assert m.import_models(_HF, v, "2026-06-20") == {"created": 0, "exists": 4, "total": 4}
-
+        assert c["created"] == 0 and c["unverifiable"] == 4
+        assert not list(v.rglob("*.md"))
 
 # A trimmed slice of the real HF /api/daily_papers response shape.
 _HF_PAPERS = [
@@ -98,25 +107,28 @@ def test_hf_papers_records():
     assert r["authors"] == ["Md Nayem Uddin", "Amir Saeidi"]
     assert r["url"] == "https://arxiv.org/abs/2606.20529"
     assert "tool-calling" in r["keywords"]
-    assert m.source_slug(r) == "ledgeragent-structured-state-for-tool-calling-2606-20529"
+    assert m.capture_name(r) == \
+        "2026-06-17-ledgeragent-structured-state-for-tool-calling-2606-20529.md"
 
 
-def test_hf_papers_import_creates_conformant_pages_idempotent():
+def test_hf_papers_import_writes_raw_captures_idempotent():
+    """Papers become RAW captures for OKEngine's raw-compile (which seats and identifies the page
+    through the write path) — never wiki pages written here (okengine#886)."""
     m = _load("okpack_ai_research_hf_papers_import")
-    schema = _schema()
     with tempfile.TemporaryDirectory() as t:
         v = Path(t)
-        c = m.import_sources(_HF_PAPERS, v, "2026-06-20")
+        c = m.import_sources(_HF_PAPERS, v, "2026-06-20T00:00:00+00:00")
         assert c == {"created": 1, "exists": 0, "total": 1}
-        pages = list((v / "wiki" / "sources").rglob("*.md"))
-        assert len(pages) == 1
-        p = pages[0]
-        assert "/sources/2026/06/" in str(p)                         # by-date partition
-        fm = _frontmatter(p.read_text(encoding="utf-8"))
-        assert fm and not check_page(fm, schema)                     # conformant: required + enums
-        txt = p.read_text(encoding="utf-8")
-        assert "source_kind: paper" in txt and "hf-daily-papers" in txt
-        assert m.import_sources(_HF_PAPERS, v, "2026-06-20") == {"created": 0, "exists": 1, "total": 1}
+        assert not (v / "wiki" / "sources").exists()                 # no direct page writes
+        (capture,) = list((v / "raw" / "hf").glob("*.md"))
+        fm = _frontmatter(capture.read_text(encoding="utf-8"))
+        assert fm["type"] == "source" and fm["source_kind"] == "paper"
+        assert fm["url"] == "https://arxiv.org/abs/2606.20529" and fm["publisher"] == "arXiv"
+        assert fm["published"] == "2026-06-17" and fm["arxiv_id"] == "2606.20529"
+        assert "id" not in fm and "raw" not in fm                    # the engine stamps identity
+        assert "hf-daily-papers" not in capture.read_text(encoding="utf-8")
+        assert m.import_sources(_HF_PAPERS, v, "2026-06-20T00:00:00+00:00") == \
+            {"created": 0, "exists": 1, "total": 1}
 
 
 def test_hf_papers_strict_mode_fetch_and_write():

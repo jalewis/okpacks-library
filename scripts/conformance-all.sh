@@ -11,7 +11,8 @@
 # Degraded mode (okpacks-library#19): without the official validators the suites still run
 # structural+golden, but that is NOT full conformance. By default this prints an unmistakable
 # degraded banner; pass --strict (or set OKPACK_STRICT_CONFORMANCE=1) to FAIL instead — CI uses
-# --strict so a missing validator can never silently pass.
+# --strict so a missing validator can never silently pass. --strict also requires an engine
+# checkout (OKENGINE_DIR or ENGINE_DIR), so the engine-dependent suites can never silently skip.
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 fail=0
@@ -20,6 +21,22 @@ strict=0
 if [ "${1:-}" = "--strict" ] || [ "${OKPACK_STRICT_CONFORMANCE:-0}" = "1" ]; then strict=1; fi
 have_stix2=1; python3 -c "import stix2" 2>/dev/null || have_stix2=0
 have_ocsf=1;  python3 -c "import py_ocsf_models" 2>/dev/null || have_ocsf=0
+# Engine-dependent suites (write_page partition routing, ATT&CK authority disposition) drive the
+# REAL engine libs and print "skip" without one -- which exits 0, so a run with no engine looked
+# identical to a passing one. Locate the engine once and hand it to every suite; under --strict a
+# missing engine FAILS before anything runs instead of passing over the unchecked contract.
+engine="${OKENGINE_DIR:-${ENGINE_DIR:-}}"
+if [ -n "$engine" ] && [ -f "$engine/scripts/cron/okf_migrate.py" ] && [ -f "$engine/scripts/cron/authority_lib.py" ]; then
+  export OKENGINE_DIR="$engine"
+  echo "engine: $engine"
+else
+  echo "⚠️  NO ENGINE CHECKOUT — engine-dependent conformance tests will skip (set OKENGINE_DIR or ENGINE_DIR"
+  echo "    to an okengine checkout; got '${engine}')."
+  if [ "$strict" = 1 ]; then
+    echo "    (--strict / OKPACK_STRICT_CONFORMANCE=1) → FAILING."
+    exit 1
+  fi
+fi
 shopt -s nullglob
 for d in "$ROOT"/packs/*/; do
   name="$(basename "$d")"

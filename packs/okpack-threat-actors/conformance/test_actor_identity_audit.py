@@ -31,6 +31,9 @@ def _fm(path: Path) -> dict:
 def test_classifies_production_regressions_without_touching_real_names(tmp_path):
     audit = _load()
     cases = {
+        "critical-threat": ({"type": "actor", "title": "Critical Threat"},
+                            "A critical Windows driver vulnerability allows privilege escalation to SYSTEM.",
+                            "tombstone"),
         "unsafe": ({"type": "actor", "title": "Unsafe"}, "Imported placeholder", "tombstone"),
         "outsider": ({"type": "actor", "title": "Outsider"}, "Claimed group", "tombstone"),
         "sleepwalker": ({"type": "actor", "title": "SLEEPWALKER"}, "SLEEPWALKER is a Windows backdoor.", "malware"),

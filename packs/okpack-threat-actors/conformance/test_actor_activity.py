@@ -33,6 +33,11 @@ def _load(name: str):
     spec = importlib.util.spec_from_file_location(name, SCRIPTS / f"{name}.py")
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
+    # write_page CREATES only with the engine identity libs; stand in for any a pack-only checkout
+    # lacks (okpacks-library#105).
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import _identity_standins
+    _identity_standins.install(sys.modules["_okf_write"])
     return mod
 
 

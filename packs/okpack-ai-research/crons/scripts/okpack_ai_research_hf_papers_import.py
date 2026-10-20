@@ -4,10 +4,15 @@
 Seeds the vault with a BOUNDED, high-signal set of trending papers from Hugging Face's
 `daily_papers` surface — the curated successor to Papers With Code (paperswithcode.com now
 redirects there). Papers are upvote-curated, so this is a reference seed, not the arXiv firehose
-(which stays in the RSS→agent lane). Deterministic JSON -> conformant `source`/paper pages.
+(which stays in the RSS lane).
 
-Non-destructive: CREATE-if-absent only — an existing source page (agent-curated, or seeded on an
-earlier run) is never overwritten. The upvote count is an import-time snapshot.
+It writes RAW CAPTURES (`raw/hf/<date>-<slug>-<arxiv>.md`), never wiki pages. The engine's
+raw-compile lane compiles each capture into a `source` page through the enforced write path, so
+the page gets the engine's URL identity, a partition-correct seat, and dedup against any page
+that already holds the paper (e.g. from the arXiv feed). Writing pages directly minted ~600
+id-less pages the write path could neither update nor find (okengine#886).
+
+Idempotent: an existing capture is never rewritten. The upvote count is an import-time snapshot.
 
 Usage: okpack_ai_research_hf_papers_import.py [--limit N] [--vault DIR] [--dry-run]
 Env: WIKI_PATH (default /opt/vault), OKPACK_AI_RESEARCH_HF_PAPERS_LIMIT (default 60).
@@ -21,7 +26,7 @@ import re
 import sys
 import urllib.parse
 import urllib.request
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -68,55 +73,50 @@ def paper_records(raw: list) -> list[dict]:
     return out
 
 
-def source_slug(rec: dict) -> str:
-    """Stable, readable slug keyed by the arXiv id (unique), e.g.
-    'ledgeragent-structured-state-…-2606-20529'."""
+def capture_name(rec: dict) -> str:
+    """Stable, readable capture filename keyed by the arXiv id (unique), e.g.
+    '2026-06-20-ledgeragent-structured-state-…-2606-20529.md'."""
     stem = kebab(rec["title"])[:56].strip("-") or "paper"
-    return f"{stem}-{rec['arxiv'].replace('.', '-').lower()}"
+    day = rec["published"] or "undated"
+    return f"{day}-{stem}-{rec['arxiv'].replace('.', '-').lower()}.md"
 
 
-def source_path(vault: Path, rec: dict, slug: str) -> Path:
-    if rec["published"]:
-        y, m = rec["published"][:4], rec["published"][5:7]
-        return vault / "wiki" / "sources" / y / m / f"{slug}.md"
-    return vault / "wiki" / "sources" / "undated" / f"{slug}.md"
-
-
-def render_source(rec: dict, today: str) -> str:
+def render_capture(rec: dict, fetched: str) -> str:
+    """A feed-item-shaped raw capture: the identity raw-compile needs (url, title, published, a
+    declared publisher) plus this importer's provenance, which the engine carries verbatim."""
     import yaml
-    fm: dict = {"type": "source", "source_kind": "paper", "title": rec["title"]}
+    fm: dict = {"type": "source", "source_channel": "api",
+                "source_feed": "Hugging Face Daily Papers", "source_kind": "paper",
+                "title": rec["title"], "url": rec["url"], "publisher": "arXiv"}
     if rec["published"]:
         fm["published"] = rec["published"]
     if rec["authors"]:
         fm["authors"] = rec["authors"]
     fm["arxiv_id"] = rec["arxiv"]
-    fm["url"] = rec["url"]
     fm["hf_upvotes"] = rec["upvotes"]
-    fm["raw"] = f"raw:ai/hf-daily-{rec['arxiv']}"
-    fm["tags"] = sorted(set(rec["keywords"]) | {"hf-daily-papers"})
-    fm["last_updated"] = today
-    fm["version"] = 1
+    if rec["keywords"]:
+        fm["source_tags"] = sorted(set(rec["keywords"]))
+    fm["fetched"] = fetched
     head = yaml.safe_dump(fm, sort_keys=False, allow_unicode=True,
                           default_flow_style=False).rstrip("\n")
     summary = rec["summary"] or f"{rec['title']} — trending on Hugging Face Daily Papers."
-    note = ("\n\n> Seeded no_agent from Hugging Face Daily Papers (upvote-curated; "
-            f"okpacks-library#13). [HF page]({rec['hf_url']}). Upvotes are an import-time snapshot; "
-            "the ingest agent maintains entity cross-links + analysis.")
-    return f"---\n{head}\n---\n## Summary\n{summary}{note}\n"
+    return (f"---\n{head}\n---\n\n# {rec['title']}\n\n{summary}\n\n"
+            f"Hugging Face page: {rec['hf_url']}\n")
 
 
-def import_sources(raw: list, vault: Path, today: str, dry_run: bool = False) -> dict:
+def import_sources(raw: list, vault: Path, fetched: str, dry_run: bool = False) -> dict:
     counts = {"created": 0, "exists": 0, "total": 0}
+    out_dir = vault / "raw" / "hf"
     for rec in paper_records(raw):
         counts["total"] += 1
-        p = source_path(vault, rec, source_slug(rec))
-        if p.exists():                       # never clobber an agent-curated / earlier page
+        p = out_dir / capture_name(rec)
+        if p.exists():                       # a capture is immutable; raw-compile owns the page
             counts["exists"] += 1
             continue
         try:
             if not dry_run:
                 p.parent.mkdir(parents=True, exist_ok=True)
-                p.write_text(render_source(rec, today), encoding="utf-8")
+                p.write_text(render_capture(rec, fetched), encoding="utf-8")
         except OSError:
             if _STRICT:
                 raise
@@ -137,7 +137,7 @@ def fetch_papers(limit: int) -> list:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
-        description="Seed `source`/paper pages from Hugging Face Daily Papers (no_agent).")
+        description="Capture Hugging Face Daily Papers as raw items for raw-compile (no_agent).")
     ap.add_argument("--limit", type=int,
                     default=int(os.environ.get("OKPACK_AI_RESEARCH_HF_PAPERS_LIMIT") or 60))
     ap.add_argument("--vault", default=os.environ.get("WIKI_PATH", "/opt/vault"))
@@ -159,16 +159,15 @@ def main(argv: list[str] | None = None) -> int:
         record_run(args.vault, "hf-papers", _started, "failed" if _STRICT else "degraded",
                    error=str(e), dry_run=getattr(args, "dry_run", False))
         return 1 if _STRICT else 0
-    today = date.today().isoformat()
     try:
-        c = import_sources(raw, Path(args.vault), today, args.dry_run)
+        c = import_sources(raw, Path(args.vault), _started.isoformat(), args.dry_run)
     except OSError as e:
         print(f"hf-papers-import: ERROR write failed ({e})", file=sys.stderr)
         record_run(args.vault, "hf-papers", _started, "failed",
                    error=str(e), dry_run=getattr(args, "dry_run", False))
         return 1
     print(f"hf-papers-import: {c['total']} HF daily papers (top-{args.limit}) — "
-          f"created {c['created']} source pages, {c['exists']} already present"
+          f"wrote {c['created']} raw captures for raw-compile, {c['exists']} already present"
           f"{' [dry-run]' if args.dry_run else ''}")
     record_run(args.vault, "hf-papers", _started, "success", counts=c, dry_run=args.dry_run)
     return 0

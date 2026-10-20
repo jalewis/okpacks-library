@@ -24,7 +24,7 @@ type: source
 title: "Example Lab announces Example-2"
 source_kind: lab-post
 published: 2026-06-16
-raw: raw:ai/example-lab-announces-example-2
+raw: raw/ai/example-lab-announces-example-2.md
 authors:
   - Example Lab
 ---

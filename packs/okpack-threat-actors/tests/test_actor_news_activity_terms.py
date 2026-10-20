@@ -46,10 +46,11 @@ REAL = ["Comment Crew", "Scattered Spider", "Volt Typhoon", "Fancy Bear", "BRONZ
 
 
 @pytest.mark.parametrize("title", GENERIC)
-def test_a_generic_name_is_never_a_match_term(title):
-    assert _mod()._terms_for({"title": title}) == set(), (
-        f"{title!r} matches ordinary prose, so its news count measures the firehose, not the actor "
-        "-- and that count ranks the assessment queue")
+def test_a_generic_name_does_not_match_ordinary_prose(title):
+    terms = _mod()._terms_for({"title": title})
+    from actor_mentions import mentions
+    assert not mentions(f"The report discusses {title.lower()} in general.", {term: "subject" for term in terms}), (
+        f"{title!r} in generic prose must not become actor activity")
 
 
 @pytest.mark.parametrize("title", REAL)

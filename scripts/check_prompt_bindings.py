@@ -31,6 +31,7 @@ fails, rather than reporting a pass it did not earn.
 """
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import pathlib
@@ -47,15 +48,25 @@ def sanitize(value: str) -> str:
     return re.sub(r"[^A-Za-z0-9_]", "_", value)
 
 
-def contract_writer_name(job_name: str) -> str:
-    """cron_pack_split.contract_writer_name, mirrored (this repo cannot import the engine)."""
-    return "okengine-write-" + re.sub(r"[^a-z0-9]+", "-", job_name.lower()).strip("-")
+def engine_writer_name(engine_dir: pathlib.Path):
+    """The engine's own cron_pack_split.contract_writer_name, loaded from the checkout.
+
+    This used to be a mirrored copy of the rule. A mirror agrees with itself while disagreeing
+    with the engine: okengine#840 bounded the derived name so no MCP tool name clamps, and the
+    copy went on certifying names the engine no longer produced. ENGINE_DIR is already required,
+    so read the rule from the engine the prompts will actually run against.
+    """
+    path = engine_dir / "scripts" / "cron_pack_split.py"
+    spec = importlib.util.spec_from_file_location("okengine_cron_pack_split", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.contract_writer_name
 
 
-def expected_writer(job: dict) -> str:
+def expected_writer(job: dict, writer_name) -> str:
     """cron_pack_split.bind_contract_writers: contracted model lanes get their own server."""
     if not job.get("no_agent") and isinstance(job.get("output_contract"), dict):
-        return contract_writer_name(str(job.get("name") or ""))
+        return writer_name(str(job.get("name") or ""))
     return "okengine-write"
 
 
@@ -87,6 +98,11 @@ def check(packs_root: pathlib.Path, engine_dir: pathlib.Path) -> tuple[list[str]
     if not engine_jobs or not template_lanes:
         return ([f"engine checkout at {engine_dir} yielded no jobs/tiers — "
                  "UNDETECTABLE, not a pass"], 0, 0)
+    try:
+        writer_name = engine_writer_name(engine_dir)
+    except Exception as exc:  # any load failure leaves the binding rule unknown
+        return ([f"cannot load contract_writer_name from {engine_dir}/scripts/cron_pack_split.py "
+                 f"({exc}) — UNDETECTABLE, not a pass"], 0, 0)
 
     failures: list[str] = []
     packs = prompts_seen = 0
@@ -104,7 +120,7 @@ def check(packs_root: pathlib.Path, engine_dir: pathlib.Path) -> tuple[list[str]
                     "engine-template — dropped on the single-pack path, a hard compose "
                     "error on the N-way path (did the lane move to an extension?)")
                 continue
-            want = sanitize(expected_writer(job))
+            want = sanitize(expected_writer(job, writer_name))
             for got, tool in TOOL_RE.findall(prompt_text(value)):
                 if got != want:
                     failures.append(
@@ -115,14 +131,41 @@ def check(packs_root: pathlib.Path, engine_dir: pathlib.Path) -> tuple[list[str]
         pack = domain_path.parts[-3]
         for job in load_jobs(domain_path):
             prompts_seen += 1
-            want = sanitize(expected_writer(job))
+            want = sanitize(expected_writer(job, writer_name))
             for got, tool in TOOL_RE.findall(prompt_text(job.get("prompt"))):
                 if got != want:
                     failures.append(
                         f"{pack}/{job.get('name')}: prompt names mcp__{got}__{tool} but the "
                         f"job binds mcp__{want}__{tool}")
 
+        failures.extend(selector_failures(domain_path, load_jobs(domain_path), writer_name))
+
     return failures, packs, prompts_seen
+
+
+def selector_failures(domain_path: pathlib.Path, jobs: list[dict], writer_name) -> list[str]:
+    """A lane's selector script prints its instructions into the digest the model reads, so a
+    writer tool it names is prompt text too -- just emitted at runtime, where the JSON checks above
+    never look. In a sibling pack repo, five selectors kept naming pre-#840 writers after every
+    JSON prompt had been corrected. A script shared by several jobs may name the writer of any of them.
+    """
+    pack = domain_path.parts[-3]
+    by_script: dict[pathlib.Path, list[dict]] = {}
+    for job in jobs:
+        script = job.get("script") if isinstance(job, dict) else None
+        if isinstance(script, str) and script:
+            by_script.setdefault(domain_path.parent / "scripts" / pathlib.Path(script).name,
+                                 []).append(job)
+    out = []
+    for path, users in sorted(by_script.items()):
+        if not path.is_file():
+            continue                  # a missing selector is the script-existence check's verdict
+        wants = {sanitize(expected_writer(job, writer_name)) for job in users}
+        for got, tool in TOOL_RE.findall(path.read_text(encoding="utf-8", errors="replace")):
+            if got not in wants:
+                out.append(f"{pack}/{path.name}: selector names mcp__{got}__{tool} but its "
+                           f"job(s) bind {sorted('mcp__' + w + '__' + tool for w in wants)}")
+    return out
 
 
 def main(argv: list[str]) -> int:
@@ -141,6 +184,8 @@ def main(argv: list[str]) -> int:
     print(f"prompt-bindings: {prompts} prompt(s) across {packs} pack(s) checked "
           f"against {engine}")
     if not packs or not prompts:
+        for f in failures:              # an early return carries its reason; never swallow it
+            print(f"prompt-bindings: FAIL — {f}")
         print(f"prompt-bindings: FAIL — examined nothing under {packs_root} "
               "(did the layout move?). UNDETECTABLE, not a pass")
         return 1

@@ -17,13 +17,18 @@ import sys
 import tempfile
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _identity_standins  # noqa: E402  (stand-ins for engine identity libs a pack-only run lacks)
+
 SCRIPTS = Path(__file__).resolve().parent.parent / "crons" / "scripts"
 LIB_ROOT = Path(__file__).resolve().parents[3]
 
 
 def _engine_okf_migrate() -> Path | None:
-    """okf_migrate.py from a sibling engine checkout (OKENGINE_DIR, else ../okengine)."""
-    for cand in (os.environ.get("OKENGINE_DIR"), str(LIB_ROOT.parent / "okengine")):
+    """okf_migrate.py from an engine checkout (OKENGINE_DIR, ENGINE_DIR -- what CI and the
+    validate scripts set -- else a sibling ../okengine)."""
+    for cand in (os.environ.get("OKENGINE_DIR"), os.environ.get("ENGINE_DIR"),
+                 str(LIB_ROOT.parent / "okengine")):
         if cand and (Path(cand) / "scripts" / "cron" / "okf_migrate.py").is_file():
             return Path(cand) / "scripts" / "cron" / "okf_migrate.py"
     return None
@@ -43,6 +48,8 @@ def _load_write(dirpath: Path):
     sys.modules.pop("okf_migrate", None)
     sys.modules.pop("importer_guard", None)
     sys.modules.pop("authority_lib", None)
+    # The copied writer now requires its real sibling actor guard adapter.
+    sys.path.insert(0, str(SCRIPTS))
     sys.path.insert(0, str(dirpath))
     spec = importlib.util.spec_from_file_location("_okf_write", dirpath / "_okf_write.py")
     m = importlib.util.module_from_spec(spec)
@@ -50,11 +57,30 @@ def _load_write(dirpath: Path):
     return m
 
 
-def test_write_page_routes_to_canonical_shard_and_collapses_stale():
+def test_write_page_updates_an_existing_page_in_place_and_shards_a_new_one():
+    """write_key contract (okengine#243/#818): an EXISTING page is updated where it sits -- never
+    forked into the shard beside it -- and the reshelve drain owns relocation. A NEW page is
+    minted at its by-letter shard straight away. The previous expectation (a write moves a stale
+    flat page into its shard) predates #818; it went unnoticed because the test skipped silently
+    whenever the engine was located only through ENGINE_DIR."""
     engine = _engine_okf_migrate()
     if engine is None:
-        print("  skip test_write_page_routes... (engine okf_migrate not found; set OKENGINE_DIR)")
+        print("  skip test_write_page_updates... (engine okf_migrate not found; set OKENGINE_DIR)")
         return
+    # The copied okf_migrate imports `tools.schema_validator` and the `okengine` package
+    # (okengine#997), which the gateway resolves from /opt/hermes: give it this checkout's two roots.
+    root = engine.parents[2]
+    saved_path = list(sys.path)
+    sys.path[:0] = [str(root), str(root / "src")]
+    try:
+        _write_page_updates_in_place(engine)
+    finally:
+        sys.path[:] = saved_path
+        for name in [n for n in sys.modules if n == "tools" or n.startswith("tools.")]:
+            sys.modules.pop(name)
+
+
+def _write_page_updates_in_place(engine: Path) -> None:
     with tempfile.TemporaryDirectory() as t:
         d = Path(t)
         (d / "scripts").mkdir()
@@ -65,23 +91,26 @@ def test_write_page_routes_to_canonical_shard_and_collapses_stale():
         (vault / "schema.yaml").write_text(
             "partitioning:\n  namespaces:\n    entities: {strategy: by-letter}\n"
             "types: {actor: {}}\n")
-        # pre-existing STALE FLAT copy carrying a curated field owned by another lane
+        # pre-existing FLAT copy carrying a curated field owned by another lane
         (vault / "wiki" / "entities" / "havij.md").write_text(
             "---\ntype: actor\nid: S0224\nattribution_confidence: high\n---\nold\n")
 
         w = _load_write(d / "scripts")
         content = w.content_root(vault)                  # == vault/wiki
-        # importer passes a FLAT rel_path; write_page must route to the by-letter shard, twice = idempotent
-        for _ in range(2):
+        for _ in range(2):                               # twice = idempotent
             act = w.write_page(content, "entities/havij.md",
                                {"type": "actor", "id": "S0224", "aliases": ["havij"]}, "fresh")
         pages = sorted(p.relative_to(content).as_posix() for p in (content / "entities").rglob("*.md"))
-        assert pages == ["entities/h/havij.md"], pages          # routed + stale flat collapsed
+        assert pages == ["entities/havij.md"], pages     # updated in place, no shard duplicate
         assert act == "updated"
-        fm, _ = w._split_frontmatter((content / "entities" / "h" / "havij.md").read_text())
-        assert fm.get("attribution_confidence") == "high"       # curated field merged from the stale copy
+        fm, _ = w._split_frontmatter((content / "entities" / "havij.md").read_text())
+        assert fm.get("attribution_confidence") == "high"       # curated field kept
         assert fm.get("aliases") == ["havij"]
 
+        # A NEW page's seat, as write_page computes it (creating needs the engine identity libs,
+        # proven separately in tests/test_okf_write_page_id.py).
+        assert w.okf_migrate.write_key(vault, "entities", "lazarus", {"type": "actor"}) \
+            == "entities/l/lazarus"
 
 def test_write_page_falls_back_to_flat_without_engine():
     """No engine okf_migrate on the path -> write_page keeps rel_path verbatim (legacy behavior),
@@ -97,7 +126,14 @@ def test_write_page_falls_back_to_flat_without_engine():
         w = _load_write(d / "scripts")
         assert w.okf_migrate is None                            # guard tripped, no crash
         content = w.content_root(vault)
-        w.write_page(content, "entities/havij.md", {"type": "actor"}, "b")
+        if w.missing_identity_libs():
+            # No engine identity libs either: a CREATE is refused rather than landing a page with
+            # no id, which the write path could never update (okpacks-library#105).
+            assert w.write_page(content, "entities/havij.md", {"type": "actor"}, "b") == \
+                "unverifiable"
+            assert not (content / "entities" / "havij.md").exists()
+        _identity_standins.install(w)                           # identity available, seat not
+        assert w.write_page(content, "entities/havij.md", {"type": "actor"}, "b") == "created"
         assert (content / "entities" / "havij.md").is_file()    # verbatim flat, as before
 
 
@@ -178,6 +214,7 @@ def test_authority_policy_fails_closed_on_spoofed_url():
             "source_names": ["MITRE ATT&CK"], "url_hosts": ["attack.mitre.org"],
             "id_field": "attack_id", "id_pattern": r"G\d{4}", "verified_fields": ["title"],
         }
+        _identity_standins.install(w)      # a create needs identity; the POLICY is under test
         try:
             w.write_page(w.content_root(vault), "entities/fake.md",
                          {"type": "actor", "sources": ["MITRE ATT&CK"], "attack_id": "G0001",

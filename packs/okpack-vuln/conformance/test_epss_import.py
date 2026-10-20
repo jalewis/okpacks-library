@@ -24,14 +24,21 @@ def _load(name: str):
     for m in ("_okf_write", "okf_migrate", name):
         sys.modules.pop(m, None)
     sys.path.insert(0, str(SCRIPTS))
-    if name == "kev_import":
+    stubbed = name == "kev_import"
+    if stubbed:
         # kev_import imports the engine's okf_migrate (staged alongside pack scripts in a
         # deployment, absent standalone) — stub it; _cwes under test doesn't touch it.
         import types
         sys.modules["okf_migrate"] = types.ModuleType("okf_migrate")
     spec = importlib.util.spec_from_file_location(name, SCRIPTS / f"{name}.py")
     mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
+    try:
+        spec.loader.exec_module(mod)
+    finally:
+        if stubbed:
+            # The module keeps its own reference; never leave the empty stub for a later test's
+            # `import okf_migrate` (it broke the stand-in contract test in a full run).
+            sys.modules.pop("okf_migrate", None)
     return mod
 
 

@@ -7,7 +7,8 @@ The entity synthesis lane is probabilistic.  This daily backstop re-evaluates ev
 * generic/template/common-role labels are tombstoned;
 * pages whose own prose explicitly defines the subject as malicious software, a backdoor,
   ransomware, or a phishing toolkit are retyped to ``malware``;
-* authority-backed actors are never changed by lexical heuristics.
+* source-role contradictions are evaluated before authority metadata;
+* otherwise authority-backed actors are not changed by lexical heuristics.
 
 Ambiguous pages are reported and left alone.  Use ``--apply`` (or
 ``ACTOR_IDENTITY_AUDIT_APPLY=1``) to write; dry-run is the safe default.
@@ -25,6 +26,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _okf_write import content_root  # noqa: E402
+from actor_mentions import actor_identity_error, source_identity_error
 
 _FM = re.compile(r"^---\s*\n(.*?)\n---\s*\n(.*)", re.S)
 _NORMALIZE = re.compile(r"[^a-z0-9]+")
@@ -52,7 +54,7 @@ _SOFTWARE_TITLE = re.compile(r"\b(?:backdoor|malware|ransomware|stealer|trojan|r
 _ACTOR_ACTIVITY_FIELDS = frozenset(
     {
         "actor_type", "activity_tier", "attribution_confidence", "consensus",
-        "news_last_seen", "recent_news", "recent_news_refs", "recent_reports",
+        "news_last_seen", "news_total", "recent_news", "recent_news_refs", "recent_reports",
         "review_checked_at", "review_status", "sheet_origin_group", "total_mentions",
     }
 )
@@ -142,11 +144,20 @@ def _reserved_actor_titles(vault: Path) -> frozenset[str]:
 
 
 def classify(
-    fm: dict, body: str, path: Path, reserved_titles: frozenset[str] = frozenset()
+    fm: dict, body: str, path: Path, reserved_titles: frozenset[str] = frozenset(),
+    *, wiki: Path | None = None
 ) -> tuple[str, str]:
     """Return ``(keep|tombstone|malware, reason)`` using high-precision evidence."""
     if str(fm.get("type") or "") != "actor" or str(fm.get("status") or "").lower() == "tombstoned":
         return "keep", "not a live actor"
+    sourced_contradiction = source_identity_error(wiki, fm) if wiki is not None else None
+    if sourced_contradiction:
+        return "tombstone", f"original source subject is {sourced_contradiction}, not an actor"
+    contradiction = actor_identity_error(_label(fm, path), body)
+    # Known software definitions retain the existing retype decision below.
+    # A vulnerability/severity subject has no corresponding entity-type migration.
+    if contradiction and not _defines_software(_label(fm, path), body):
+        return "tombstone", f"source subject is {contradiction}, not an actor"
     if _authority_backed(fm):
         return "keep", "authority-backed actor identity"
     title = _label(fm, path)
@@ -207,7 +218,7 @@ def main(argv: list[str] | None = None) -> int:
     counts = {"tombstone": 0, "malware": 0, "keep": 0}
     for path in sorted((wiki / "entities").rglob("*.md")) if (wiki / "entities").exists() else []:
         fm, body = _split(path)
-        action, reason = classify(fm, body, path, reserved_titles)
+        action, reason = classify(fm, body, path, reserved_titles, wiki=wiki)
         counts[action] += 1
         if action != "keep":
             print(f"{'DRY ' if dry_run else ''}{action}: {path.relative_to(wiki)} — {reason}")

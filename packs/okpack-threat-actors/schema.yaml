@@ -259,7 +259,7 @@ cockpit:
     actor: [aliases, actor_type, origin_country, motivation, primary_motivation, target_sector,
             platforms, techniques, signature_techniques, software, related_actors,
             shared_proprietary_tooling_with, attribution_confidence, activity_tier,
-            distinctiveness_score, news_last_seen, recent_news, recent_news_refs,
+            distinctiveness_score, news_last_seen, recent_news, news_total, recent_news_refs,
             recent_reports, total_mentions]
   tab_defs:
     overview:
@@ -284,7 +284,7 @@ cockpit:
           dataset: {dir: entities, type: actor, has: [recent_news]}   # actors named in recent NEWS
           sort: {field: news_last_seen, desc: true, require: true, date: true, then: title}   # newest NEWS first; deterministic title tie-break, never unvalidated mention volume
           limit: 5
-          meta_template: "showing {shown} of {total} actors observed in recent reporting"
+          meta_template: "showing {shown} of {total} actors observed in recent reporting; News = items in the last 30 days, News total = last 180 days"
           columns:
             - {field: title, label: Actor, link: true}
             - label: Assessed origin
@@ -299,8 +299,11 @@ cockpit:
                   UA: Ukraine, VN: Vietnam, TR: Türkiye, IL: Israel, IN: India, PK: Pakistan,
                   LB: Lebanon, NG: Nigeria, BR: Brazil, KR: South Korea}
             - {field: news_last_seen, label: Seen, date: true}
+            # Both from actor_news_activity's one matcher, so News <= News total on every row.
+            # (Total used to be total_mentions, a different lane's report-tag count; News > Total on
+            # about half the rows. okpacks-library#100.)
             - {field: recent_news, label: News, tone: crit}
-            - {field: total_mentions, label: Total}
+            - {field: news_total, label: News total}
           empty: "Actor activity ranks after the first actor-activity lane run."
         - {title: Daily brief, view: doc-summary, section: Summary, dir: briefings, glob: "daily-*", span: 6}
         - {title: Weekly brief, view: doc-summary, section: "Themes at a glance", dir: briefings, glob: "weekly-*", span: 6}
@@ -328,7 +331,7 @@ cockpit:
           dataset: {dir: entities, type: actor, has: [recent_news]}   # actors named in recent NEWS
           sort: {field: news_last_seen, desc: true, require: true, date: true, then: title}   # newest NEWS first; deterministic title tie-break, never unvalidated mention volume
           limit: 8
-          meta_template: "showing {shown} of {total} actors named in recent news; Seen = latest report date"
+          meta_template: "showing {shown} of {total} actors named in recent news; Seen = latest report date; News = items in the last 30 days, News total = last 180 days"
           columns:
             - {field: title, label: Actor, link: true}
             - {field: aliases, label: Aliases, max: 2}
@@ -338,8 +341,11 @@ cockpit:
                 value_field: assessed_value
                 labels: *country_labels
             - {field: news_last_seen, label: Seen, date: true}
+            # Both from actor_news_activity's one matcher, so News <= News total on every row.
+            # (Total used to be total_mentions, a different lane's report-tag count; News > Total on
+            # about half the rows. okpacks-library#100.)
             - {field: recent_news, label: News, tone: crit}
-            - {field: total_mentions, label: Total}
+            - {field: news_total, label: News total}
           empty: "Actor activity ranks after the first actor-activity lane run."
         - title: Campaigns
           span: 5

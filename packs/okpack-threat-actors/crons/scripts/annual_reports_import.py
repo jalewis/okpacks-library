@@ -35,6 +35,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _okf_write import content_root, clean, slug, write_page  # noqa: E402
+from actor_mentions import mentions as matched_mentions
 from misp_galaxy_import import index_actors      # noqa: E402
 
 REPO = os.environ.get("ANNUAL_REPORTS_REPO", "jacobdjwilson/awesome-annual-security-reports")
@@ -42,7 +43,6 @@ SUBDIR = "Markdown Conversions"
 _DEFAULT_INCLUDE = ("threat,ransomware,breach,vulnerab,apt,adversary,intrusion,malware,incident,"
                     "espionage,extortion,ddos,phishing,exploit,attack,nation-state,landscape,m-trends,dbir")
 MAXCHARS = int(os.environ.get("ANNUAL_REPORTS_MAXCHARS", "40000"))
-MIN_ALIAS = 6
 
 
 def _get(url: str, timeout: int = 60) -> bytes:
@@ -119,11 +119,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.limit:
         items = items[:args.limit]
 
-    # actor alias matcher (word-boundary, len>=MIN_ALIAS) over report text
+    # Shared contextual actor-name matcher over original report text
     idx = index_actors(vault)
-    stems = {a: Path(r).stem for a, r in idx.items() if len(a) >= MIN_ALIAS}
-    rx = re.compile(r"\b(" + "|".join(sorted(map(re.escape, stems), key=len, reverse=True)) + r")\b", re.I) \
-        if stems else None
+    stems = {a: Path(r).stem for a, r in idx.items() if not a.startswith("entities:")}
 
     written = linked = errs = 0
     for year, filename, load in items:
@@ -135,7 +133,7 @@ def main(argv: list[str] | None = None) -> int:
             continue
         title = _title(text, filename)
         vendor = filename.split("-", 1)[0]
-        mentions = sorted({stems[m.lower()] for m in rx.findall(text[:MAXCHARS])}) if rx else []
+        mentions = sorted(matched_mentions(text[:MAXCHARS], stems))
         body = clean(text, cap=MAXCHARS)
         if mentions:
             body += "\n\n## Actors named in this report\n\n" + "\n".join(f"- [[{s}]]" for s in mentions)
@@ -144,10 +142,10 @@ def main(argv: list[str] | None = None) -> int:
               "source_feed": vendor, "publisher": vendor, "title": title, "published": f"{year}-01-01",
               "url": f"https://github.com/{REPO}/blob/HEAD/" + urllib.parse.quote(f"{SUBDIR}/{year}/{filename}"),
               "sources": [vendor, "awesome-annual-security-reports"],
-              "mentions_actors": mentions or None}
+              "mentions_actors": mentions}
         rel_path = f"sources/{year}-01-01-{slug(title)}.md"
         try:
-            write_page(vault, rel_path, {k: v for k, v in fm.items() if v not in (None, "", [])},
+            write_page(vault, rel_path, {k: v for k, v in fm.items() if k == "mentions_actors" or v not in (None, "", [])},
                        body, dry_run=args.dry_run)
             written += 1
         except OSError as e:

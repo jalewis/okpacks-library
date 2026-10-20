@@ -70,7 +70,7 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"wakeAgent": False}))
         return 0
 
-    written = errs = 0
+    written = errs = collisions = 0
     for vendor, rec in vendors.items():
         if len(rec["reports"]) < args.min_reports:
             continue
@@ -87,15 +87,21 @@ def main(argv: list[str] | None = None) -> int:
               "report_count": len(rec["reports"]), "report_theme": themes or None,
               "years_active": years or None}
         try:
-            write_page(vault, f"entities/{slug(vendor)}.md",
-                       {k: v for k, v in fm.items() if v not in (None, "", [])},
-                       "\n".join(body), dry_run=args.dry_run)
+            if write_page(vault, f"entities/{slug(vendor)}.md",
+                          {k: v for k, v in fm.items() if v not in (None, "", [])},
+                          "\n".join(body), dry_run=args.dry_run) == "collision":
+                collisions += 1      # refused: a live page differs only by separators
+                continue
             written += 1
         except OSError as e:
             errs += 1
             print(f"WARN: {vendor}: {e}", file=sys.stderr)
 
+    # A refused record is REPORTED, never silently dropped: the lane now survives a weak-identity
+    # clash instead of dying on it, so this count is what keeps those vendors visible for the
+    # identity decision they need.
     print(f"vendor-index: {len(vendors)} vendor(s) seen, {written} vendor page(s) written"
+          f"{f', {collisions} refused on weak-identity collision' if collisions else ''}"
           f"{f', {errs} error(s)' if errs else ''}")
     print(json.dumps({"wakeAgent": False}))
     return 0
