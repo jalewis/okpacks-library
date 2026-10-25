@@ -4,6 +4,13 @@ All notable changes to this pack. Format loosely follows [Keep a Changelog].
 
 [Keep a Changelog]: https://keepachangelog.com/
 
+## 0.1.15 — 2026-10-25
+
+- Require OKEngine v0.15.21 and retain the existing Hermes pin. Align the pack and
+  catalog release bindings with the merged engine used for qualification.
+
+Migration impact: Requires engine upgrade to v0.15.21; no stored-page migration.
+
 ## 0.1.14 — 2026-10-18
 
 - Require OKEngine v0.15.18 and retain the existing Hermes pin. Align the pack and
