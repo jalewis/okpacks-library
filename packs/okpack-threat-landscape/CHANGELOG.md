@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.15 — 2026-11-07
+
+- Require OKEngine v0.15.22 and retain the existing Hermes pin. Align the pack and
+  catalog release bindings with the merged engine used for qualification.
+
+Migration impact: Requires engine upgrade to v0.15.22; no stored-page migration.
+
 ## 0.2.14 — 2026-10-25
 
 - Require OKEngine v0.15.21 and retain the existing Hermes pin. Align the pack and

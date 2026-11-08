@@ -8,6 +8,7 @@ locally where pytest exists). Also pytest-discoverable.
 import importlib.util
 import sys
 import tempfile
+from datetime import date, timedelta
 from pathlib import Path
 
 import yaml
@@ -28,6 +29,11 @@ def _fm(p, fm, body=""):
     p.write_text("---\n" + yaml.safe_dump(fm) + "---\n\n" + body + "\n", encoding="utf-8")
 
 
+def _days_ago(n):
+    # Relative to today: a fixed date ages out of the --recent-days window and fails the test later.
+    return (date.today() - timedelta(days=n)).isoformat()
+
+
 def test_stamps_report_mentions():
     m = _load()
     with tempfile.TemporaryDirectory() as t:
@@ -36,11 +42,11 @@ def test_stamps_report_mentions():
         _fm(wiki / "cves" / "CVE-2026-48282.md", {"type": "cve", "cve_id": "CVE-2026-48282", "vendor": "Acme"})
         _fm(wiki / "cves" / "CVE-2026-45659.md", {"type": "cve", "cve_id": "CVE-2026-45659"})
         # two source docs cite the first CVE (one recent, one old); one cites the second
-        _fm(wiki / "sources" / "s1.md", {"type": "source", "published": "2026-07-01"},
+        _fm(wiki / "sources" / "s1.md", {"type": "source", "published": _days_ago(10)},
             "Exploited via CVE-2026-48282 and again CVE-2026-48282 (one appearance).")
         _fm(wiki / "sources" / "s2.md", {"type": "source", "published": "2020-01-01"}, "Old note on cve-2026-48282.")
-        _fm(wiki / "briefings" / "b1.md", {"type": "briefing", "published": "2026-07-05"}, "Watch CVE-2026-45659.")
-        _fm(wiki / "sources" / "s3.md", {"type": "source", "published": "2026-07-06",
+        _fm(wiki / "briefings" / "b1.md", {"type": "briefing", "published": _days_ago(6)}, "Watch CVE-2026-45659.")
+        _fm(wiki / "sources" / "s3.md", {"type": "source", "published": _days_ago(5),
                                            "cves": ["CVE-2026-45659"]},
             "Structured reference only; no identifier in this prose.")
 
